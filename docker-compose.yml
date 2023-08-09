@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: dev.Dockerfile
+    ports:
+      - 80:80
+    volumes: 
+      - ./:/var/www
+    networks: 
+      - storekd
+  postgres:
+    image: postgis/postgis:15-3.3
+    ports:
+      - 5432:5432
+    volumes: 
+      - /var/lib/postgres15/data:/var/lib/postgres15/data
+    env_file: ./docker.env
+    networks:
+      - storekd
+  redis:
+    image: redis:6.2.1-alpine
+    ports: 
+      - 6379:6379
+    networks:
+      - storekd
+  rabbitmq:
+    image: rabbitmq:3.8-alpine
+    ports:
+      - 5672:5672
+    networks: 
+      - storekd
+networks: 
+  storekd:
+    driver: bridge
