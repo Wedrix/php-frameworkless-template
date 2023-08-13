@@ -9,9 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-use function App\Server\RequestDispatcher\UserWithIdAndRole;
-use function App\Server\RequestDispatcher\accessTokenAuthenticatesRequest;
-
 function AssociateUserWithRequestMiddleware(): Middleware
 {
     static $middleware;
