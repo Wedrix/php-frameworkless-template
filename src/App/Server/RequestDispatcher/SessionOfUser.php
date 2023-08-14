@@ -10,8 +10,8 @@ function SessionOfUser(
 {
     global $users_sessions;
 
-    if (!userHasASession(user: $user)) {
-        throw new \Exception('The user is not associated to any session.');
+    if (thereIsNoSessionOfUser(user: $user)) {
+        throw new \Exception('There is no session of the user.');
     }
 
     return $users_sessions[$user];
@@ -26,14 +26,8 @@ final class SessionOfUser
     {
         global $users_sessions, $sessions_users;
 
-        if (userHasASession(user: $user)) {
-            $userSession = SessionOfUser(user: $user);
-
-            if ($userSession === $session) {
-                throw new \Exception('The session is already associated to the user.');
-            }
-
-            throw new \Exception('The session is associated to a different user.');
+        if (thereIsASessionOfUser(user: $user)) {
+            throw new \Exception('There is a session of the user.');
         }
 
         $users_sessions[$user] = $session;
@@ -48,12 +42,8 @@ final class SessionOfUser
     {
         global $users_sessions, $sessions_users;
 
-        if (!userHasASession(user: $user)) {
-            throw new \Exception('The user has no associated session.');
-        }
-
-        if (!(SessionOfUser(user: $user) === $session)) {
-            throw new \Exception('The user is not associated to the session.');
+        if (sessionIsNotOfUser(session: $session, user: $user)) {
+            throw new \Exception('The session is not of the user.');
         }
         
         $session = $users_sessions[$user];

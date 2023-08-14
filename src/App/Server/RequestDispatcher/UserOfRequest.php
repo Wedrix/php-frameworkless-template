@@ -12,8 +12,8 @@ function UserOfRequest(
 {
     global $requests_users;
 
-    if (!requestHasAUser(request: $request)) {
-        throw new \Exception('The request is not associated to any user.');
+    if (thereIsNoUserOfRequest(request: $request)) {
+        throw new \Exception('There is no user of the request.');
     }
 
     return $requests_users[$request];
@@ -28,14 +28,8 @@ final class UserOfRequest
     {
         global $requests_users, $users_requests;
 
-        if (requestHasAUser(request: $request)) {
-            $requestUser = UserOfRequest(request: $request);
-
-            if ($requestUser === $user) {
-                throw new \Exception('The user is already associated to the request.');
-            }
-
-            throw new \Exception('The user is associated to a different request.');
+        if (thereIsAUserOfRequest(request: $request)) {
+            throw new \Exception('There is a user of the request.');
         }
         
         $requests_users[$request] = $user;
@@ -50,12 +44,8 @@ final class UserOfRequest
     {
         global $requests_users, $users_requests;
 
-        if (!requestHasAUser(request: $request)) {
-            throw new \Exception('The request has no associated user.');
-        }
-
-        if (!(UserOfRequest(request: $request) === $user)) {
-            throw new \Exception('The request is not associated to the user.');
+        if (userIsNotOfRequest(user: $user, request: $request)) {
+            throw new \Exception('The user is not of the request.');
         }
 
         $user = $requests_users[$request];

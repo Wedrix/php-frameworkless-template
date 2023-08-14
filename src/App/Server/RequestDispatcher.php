@@ -74,7 +74,7 @@ namespace App\Server\RequestDispatcher
     $sessions_users = new \WeakMap();
     $users_sessions = new \WeakMap();
 
-    function sessionHasAUser(
+    function thereIsAUserOfSession(
         Session $session
     ): bool
     {
@@ -83,7 +83,7 @@ namespace App\Server\RequestDispatcher
         return isset($sessions_users[$session]);
     }
 
-    function requestHasAUser(
+    function thereIsAUserOfRequest(
         Request $request
     ): bool
     {
@@ -92,7 +92,7 @@ namespace App\Server\RequestDispatcher
         return isset($requests_users[$request]);
     }
 
-    function userHasASession(
+    function thereIsASessionOfUser(
         User $user
     ): bool
     {
@@ -101,7 +101,7 @@ namespace App\Server\RequestDispatcher
         return isset($users_sessions[$user]);
     }
 
-    function userHasARequest(
+    function thereIsARequestOfUser(
         User $user
     ): bool
     {
@@ -110,7 +110,75 @@ namespace App\Server\RequestDispatcher
         return isset($users_requests[$user]);
     }
 
-    function sessionHasExpired(
+    function thereIsNoUserOfSession(
+        Session $session
+    ): bool
+    {
+        return !thereIsAUserOfSession(session: $session);
+    }
+
+    function thereIsNoUserOfRequest(
+        Request $request
+    ): bool
+    {
+        return !thereIsAUserOfRequest(request: $request);
+    }
+
+    function thereIsNoSessionOfUser(
+        User $user
+    ): bool
+    {
+        return !thereIsASessionOfUser(user: $user);
+    }
+
+    function thereIsNoRequestOfUser(
+        User $user
+    ): bool
+    {
+        return !thereIsARequestOfUser(user: $user);
+    }
+
+    function requestIsNotOfUser(
+        Request $request,
+        User $user
+    ): bool
+    {
+        global $users_requests;
+
+        return ($users_requests[$user] ?? null) !== $request;
+    }
+
+    function sessionIsNotOfUser(
+        Session $session,
+        User $user
+    ): bool
+    {
+        global $users_sessions;
+
+        return ($users_sessions[$user] ?? null) !== $session;
+    }
+
+    function userIsNotOfRequest(
+        User $user,
+        Request $request
+    ): bool
+    {
+        global $requests_users;
+
+        return ($requests_users[$request] ?? null) !== $user;
+    }
+
+    function userIsNotOfSession(
+        User $user,
+        Session $session
+    ): bool
+    {
+        global $sessions_users;
+
+        return ($sessions_users[$session] ?? null) !== $user;
+    }
+
+    function sessionIsExpired(
         Session $session
     ): bool
     {
