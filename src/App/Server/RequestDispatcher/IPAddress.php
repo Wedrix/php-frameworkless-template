@@ -8,12 +8,7 @@ final class IPAddress
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        if (\filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4 | \FILTER_FLAG_IPV6) === false) {
-            throw new \Exception('Invalid IP Address.');
-        }
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -28,35 +23,18 @@ final class IPAddress
         array $arguments
     ): self
     {
-        return new self(
-            value: $name
-        );
-    }
+        $value = \trim($name);
 
-    public static function isValid(
-        string $value
-    ): bool
-    {
-        return \filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4 | \FILTER_FLAG_IPV6) !== false;
-    }
-
-    /**
-     * Remove port from IPV4 address if it exists
-     *
-     * Note: leaves IPV6 addresses alone
-     */
-    public static function extract(
-        string $value
-    ): string
-    {
-        $parts = \explode(':', $value);
+        if (empty($value)) {
+            throw new \Exception('Invalid IPAddress! The value cannot be empty.');
+        }
         
-        if (\count($parts) == 2) {
-            if (\filter_var($parts[0], \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4) !== false) {
-                return $parts[0];
-            }
+        if (\filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4 | \FILTER_FLAG_IPV6) === false) {
+            throw new \Exception('Invalid IP Address.');
         }
 
-        return $value;
+        return new self(
+            value: $value
+        );
     }
 }

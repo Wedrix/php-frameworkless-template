@@ -2,6 +2,31 @@
     "type": "project",
     "license": "proprietary",
     "version": "dev-main",
+    "repositories": [
+        {
+            "type": "package",
+            "package": {
+                "type": "metapackage",
+                "name": "vendor/package-patches",
+                "version": "1.0.0",
+                "require": {
+                    "netresearch/composer-patches-plugin": "~1.0"
+                },
+                "extra": {
+                    "patches": {
+                        "doctrine/orm": {
+                            "^2.11": [
+                                {
+                                    "url": "./patches/doctrine_nullable_embeddables.patch",
+                                    "title": "[FEATURE] Nullable Embeddables for Doctrine 2"
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    ],
     "require": {
         "php": "^8.2",
         "doctrine/orm": "^2.11",
@@ -9,8 +34,6 @@
         "vlucas/phpdotenv": "^5.2",
         "gotzmann/comet": "^2.0",
         "twig/twig": "^3.0",
-        "mailgun/mailgun-php": "^3.5",
-        "php-amqplib/php-amqplib": "^3.0",
         "guzzlehttp/guzzle": "^7.3",
         "http-interop/http-factory-guzzle": "^1.0",
         "workerman/crontab": "^1.0",
@@ -22,7 +45,8 @@
         "wedrix/watchtower": "^3.0",
         "laravel/serializable-closure": "^1.3",
         "matthiasmullie/scrapbook": "^1.5",
-        "symfony/var-exporter": "^6.2"
+        "symfony/var-exporter": "^6.2",
+        "symfony/mailer": "^6.3"
     },
     "autoload": {
         "psr-4": {
@@ -72,15 +96,14 @@
             "src/App/EmailClient.php",
             "src/App/EmailConfig.php",
             "src/App/Encrypter.php",
-            "src/App/FirebaseConfig.php",
             "src/App/Hasher.php",
             "src/App/IPAddressParserConfig.php",
-            "src/App/MailgunClient.php",
-            "src/App/MailgunConfig.php",
             "src/App/RabbitMQConfig.php",
             "src/App/RedisConfig.php",
             "src/App/Server.php",
             "src/App/ServerConfig.php",
+            "src/App/SymfonyMailer.php",
+            "src/App/SymfonyMailerConfig.php",
             "src/App/TaskQueue.php",
             "src/App/TwigTemplateEngine.php",
             "src/App/WatchtowerConfig.php",

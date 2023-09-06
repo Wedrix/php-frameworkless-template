@@ -25,7 +25,7 @@ function ListScalarTypeDefinitionsWatchtowerCommand(): Command
         ): int
         {
             if (!$output instanceof ConsoleOutputInterface) {
-                throw new \LogicException('This command accepts only an instance of "ConsoleOutputInterface".');
+                throw new \Exception('This command accepts only an instance of "ConsoleOutputInterface".');
             }
     
             if (\iterator_count(WatchtowerConsole()->scalarTypeDefinitions()) > 0) {

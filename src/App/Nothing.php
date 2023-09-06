@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace App;
 
-final class Url
+final class Nothing
 {
     private function __construct(
         private readonly string $value
     )
     {
-        if (\filter_var($value, \FILTER_SANITIZE_URL) === false) {
-            throw new \Exception('Invalid URL.');
+        if (!empty($value)) {
+            throw new \Exception('Inavlid EmptyText!');
         }
     }
 
     public function __toString(): string
     {
-        return $this->value;
+        return (string) $this->value;
     }
 
     /**
      * @param array<string> $arguments
      */
     public static function __callStatic(
-        string $name,
+        string $name, 
         array $arguments
     ): self
     {

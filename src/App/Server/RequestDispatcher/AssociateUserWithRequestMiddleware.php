@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use App\Nothing;
 use Comet\Request;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+
+use function App\AppConfig;
+use function App\AuthConfig;
 
 function AssociateUserWithRequestMiddleware(): Middleware
 {
@@ -20,27 +24,33 @@ function AssociateUserWithRequestMiddleware(): Middleware
         ): ResponseInterface
         {
             if (!$request instanceof Request) {
-                throw new \Exception("Invalid request. Must be an instance of \\Comet\\Request");
+                throw new \Exception('Invalid request. Must be an instance of \\Comet\\Request.');
             }
 
-            $accessToken = AccessToken::{\explode("Bearer ", $request->getHeader('Authorization')[0] ?? '')[1] ?? ''}();
-            $firebaseAccessToken = FirebaseAccessToken::{\explode("Bearer ", $request->getHeader('FirebaseAuthorization')[0] ?? '')[1] ?? ''}();
-            $refreshToken = RefreshToken::{\explode("Bearer ", $request->getHeader('Reauthorization')[0] ?? '')[1] ?? ''}();
+            $authorizationHeader = $request->getHeader('Authorization')[0] ?? '';
+            $reauthorizationHeader = $request->getHeader('Reauthorization')[0] ?? '';
+
+            $accessToken = empty($authorizationHeader)
+                ? Nothing::{''}()
+                : AccessToken::{
+                    \explode('Bearer ', $authorizationHeader)[1] ?? throw new \Exception('Invalid \'Authorization\' header!')
+                }();
+            $refreshToken = empty($reauthorizationHeader)
+                ? Nothing::{''}()
+                : RefreshToken::{
+                    \explode('Bearer ', $reauthorizationHeader)[1] ?? throw new \Exception('Invalid \'Reauthorization\' header!')
+                }();
             $requestOrigin = requestOrigin($request);
             $userContext = requestUserContext($request);
 
             if (
-                !AccessToken::empty($accessToken) && !empty($userContext) && !empty($requestOrigin)
+                !($accessToken instanceof Nothing) && !empty($requestOrigin) && !empty($userContext)
             ) {
                 if (!accessTokenAuthenticatesRequest($accessToken, $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
 
-                if (!FirebaseAccessToken::empty($firebaseAccessToken) && !firebaseAccessTokenAuthenticatesRequest($firebaseAccessToken, $request)) {
-                    throw new \Exception('The request could not be authenticated!');
-                }
-
-                if (!RefreshToken::empty($refreshToken) && !refreshTokenAuthenticatesRequest($refreshToken, $request)) {
+                if (!($refreshToken instanceof Nothing) && !refreshTokenAuthenticatesRequest($refreshToken, $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
                 
@@ -49,17 +59,34 @@ function AssociateUserWithRequestMiddleware(): Middleware
                     role: AccessToken::role($accessToken)
                 );
 
-                UserOfRequest::associate($user, $request);
+                $session = Session(
+                    accessToken: $accessToken,
+                    contextCookie: ContextCookie::{
+                        (function() use($userContext): string {
+                            $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+                    
+                            $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
+                    
+                            if (AppConfig()->environment() !== 'development') {
+                                $cookie .= '; Secure';
+                            }
+                    
+                            return $cookie;
+                        })()
+                    }(),
+                    refreshToken: $refreshToken,
+                );
+
+                if (sessionIsExpired(session: $session)) {
+                    throw new \Exception('The session is expired!');
+                }
             
                 SessionOfUser::associate(
-                    session: Session(
-                        accessToken: $accessToken,
-                        firebaseAccessToken: $firebaseAccessToken,
-                        refreshToken: $refreshToken,
-                        contextCookie: ContextCookie::create($userContext)
-                    ),
+                    session: $session,
                     user: $user
                 );
+
+                UserOfRequest::associate($user, $request);
             }
     
             return $handler->handle($request);

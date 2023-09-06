@@ -15,6 +15,7 @@ function TwigTemplateEngine(): Environment
         $twigLoader = new FilesystemLoader(EmailConfig()->templatesDirectory());
 
         return new Environment($twigLoader, [
+            'debug' => AppConfig()->environment() === 'development',
             'cache' => EmailConfig()->templatesCacheDirectory(),
         ]);
     })();

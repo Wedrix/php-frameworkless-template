@@ -8,12 +8,7 @@ final class CipherText
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        if (!\is_string(Encrypter()->decrypt($value))) {
-            throw new \Exception('Invalid Ciphertext.');
-        }
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -28,8 +23,18 @@ final class CipherText
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \Exception('Invalid CipherText! The value cannot be empty.');
+        }
+
+        if (Encrypter()->decrypt($value) === false) {
+            throw new \Exception('Invalid Ciphertext!');
+        }
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 

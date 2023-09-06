@@ -6,10 +6,20 @@ services:
       dockerfile: dev.Dockerfile
     ports:
       - 80:80
-    volumes: 
+    volumes:
       - ./:/var/www
     networks: 
       - storekd
+    stop_signal: SIGKILL
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      meilisearch: 
+        condition: service_healthy
   postgres:
     image: postgis/postgis:15-3.3
     ports:
@@ -19,17 +29,52 @@ services:
     env_file: ./docker.env
     networks:
       - storekd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 10s
+      retries: 19
   redis:
     image: redis:6.2.1-alpine
     ports: 
       - 6379:6379
     networks:
       - storekd
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
   rabbitmq:
     image: rabbitmq:3.8-alpine
     ports:
       - 5672:5672
     networks: 
+      - storekd
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 10
+  meilisearch:
+    image: getmeili/meilisearch:v0.29
+    ports:
+      - 7700:7700
+    volumes:
+      - /var/lib/meilisearch/data.ms:/data.ms
+    networks: 
+      - storekd
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  mailcatcher:
+    image: schickling/mailcatcher:latest
+    ports:
+      - 1080:1080
+      - 1025:1025
+    networks:
       - storekd
 networks: 
   storekd:

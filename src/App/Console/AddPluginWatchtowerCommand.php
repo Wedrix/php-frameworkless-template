@@ -28,7 +28,7 @@ function AddPluginWatchtowerCommand(): Command
         ): int
         {
             if (!$output instanceof ConsoleOutputInterface) {
-                throw new \LogicException('This command only accepts an instance of "ConsoleOutputInterface".');
+                throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
             }
             
             $pluginType = (function () use ($input, $output): string {

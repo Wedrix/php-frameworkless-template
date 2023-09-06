@@ -8,10 +8,7 @@ final class FileName
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        //TODO: Validate file path
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -26,8 +23,18 @@ final class FileName
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \Exception('Invalid FileName! The value cannot be empty.');
+        }
+        
+        if (!(\pathinfo($value, \PATHINFO_BASENAME) === $value)) {
+            throw new \Exception('Invalid FileName!');
+        }
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 }

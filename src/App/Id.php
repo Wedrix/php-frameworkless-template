@@ -8,12 +8,7 @@ final class Id
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        if (!\uuid_is_valid($value)) {
-            throw new \Exception("Invalid Id value.");
-        }
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -28,16 +23,18 @@ final class Id
         array $arguments
     ): self
     {
-        return new self(
-            value: $name
-        );
-    }
+        $value = \trim($name);
 
-    public static function equalTo(
-        self $idA,
-        self $idB
-    ): bool
-    {
-        return $idA->value === $idB->value;
+        if (empty($value)) {
+            throw new \Exception('Invalid Id! The value cannot be empty.');
+        }
+
+        if (!\uuid_is_valid($value)) {
+            throw new \Exception("Invalid Id value.");
+        }
+
+        return new self(
+            value: $value
+        );
     }
 }

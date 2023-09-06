@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App;
 
-final class EmailAddresses
+final class FilePaths
 {
     /**
      * @readonly
-     * @param array<int,EmailAddress> $elements
+     * @param array<int,FilePath> $elements
      * 
      * Cannot directly use readonly keyword due a caveat of laravel/serializable-closures.
      * @see https://github.com/laravel/serializable-closure#caveats
@@ -33,14 +33,14 @@ final class EmailAddresses
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid EmailAddresses! The value cannot be empty.');
+            throw new \Exception('Invalid FilePaths! The value cannot be empty.');
         }
 
-        $emailAddressesParts = \explode(',',$value);
+        $filePathsParts = \explode(',',$value);
 
         $elements = \array_map(
-            static fn(string $emailAddressPart): EmailAddress => EmailAddress::{$emailAddressPart}(),
-            $emailAddressesParts
+            static fn(string $filePathPart): FilePath => FilePath::{$filePathPart}(),
+            $filePathsParts
         );
 
         return new self(

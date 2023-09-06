@@ -49,6 +49,10 @@ namespace App\Server\RequestDispatcher
     use App\Password;
     use Comet\Request;
 
+    use function App\AccessControlConfig;
+    use function App\AppConfig;
+    use function App\AuthConfig;
+
     /**
      * @var \WeakMap<Request,User>
      */
@@ -206,7 +210,7 @@ namespace App\Server\RequestDispatcher
     ): IPAddress
     {
         if ($checkProxyHeaders && empty($trustedProxies)) {
-            throw new \InvalidArgumentException('Use of the forward headers requires an array for trusted proxies.');
+            throw new \Exception('Use of the forward headers requires an array for trusted proxies.');
         }
 
         /**
@@ -231,7 +235,7 @@ namespace App\Server\RequestDispatcher
          *
          * @var array<string>
          */
-        $trustedIps = [];
+        $trustedProxyIPs = [];
 
         /**
          * @var string
@@ -278,18 +282,26 @@ namespace App\Server\RequestDispatcher
 
         foreach ($trustedProxies as $proxy) {
             if (!\in_array($proxy, $trustedWildcards) && !\in_array($proxy, $trustedCidrs)) {
-                $trustedIps[] = $proxy;
+                $trustedProxyIPs[] = $proxy;
             }
         }
 
-        if (IPAddress::isValid($remoteAddr = IPAddress::extract($request->connection->getRemoteAddress()))) {
-            $ipAddress = $remoteAddr;
+        /**
+         * Connection::getRemoteAddress() returns string
+         * @see https://github.com/walkor/workerman/blob/f3856199e0105eb66b35dc4c7d091e2283e4b682/src/Connection/ConnectionInterface.php#L124C16-L124C16 
+         */
+        $remoteAddress = extract_ip_address($request->connection->getRemoteAddress());
+                        
+        if (is_valid_ip_address($remoteAddress)) {
+            $ipAddress = $remoteAddress;
         }
 
         if ($checkProxyHeaders) {
+            $proceedToCheckProxyHeaders = false;
+
             // Exact Match
-            if (\in_array($ipAddress, $trustedIps)) {
-                $checkProxyHeaders = true;
+            if (!empty($trustedProxyIPs) && \in_array($ipAddress, $trustedProxyIPs)) {
+                $proceedToCheckProxyHeaders = true;
             }
 
             // Wildcard Match
@@ -317,7 +329,7 @@ namespace App\Server\RequestDispatcher
                         }
                     }
                     if ($match) {
-                        $checkProxyHeaders = true;
+                        $proceedToCheckProxyHeaders = true;
                         break;
                     }
                 }
@@ -330,49 +342,49 @@ namespace App\Server\RequestDispatcher
                 if ($ipAsLong) {
                     foreach ($trustedCidrs as $proxy) {
                         if ($proxy[0] <= $ipAsLong && $ipAsLong <= $proxy[1]) {
-                            $checkProxyHeaders = true;
+                            $proceedToCheckProxyHeaders = true;
                             break;
                         }
                     }
                 }
             }
 
-            if (empty($trustedIps) && empty($trustedWildcards) && empty($trustedCidrs)) {
-                $checkProxyHeaders = true;
+            if (empty($trustedProxyIPs) && empty($trustedWildcards) && empty($trustedCidrs)) {
+                $proceedToCheckProxyHeaders = true;
             }
             
-            foreach ($headersToInspect as $header) {
-                if ($request->hasHeader($header)) {
-                    $ip = (static function () use($request, $header): string {
-                        $items = \explode(',', $request->getHeaderLine($header));
-                        $headerValue = \trim(\reset($items));
-                
-                        if (\ucfirst($header) == 'Forwarded') {
-                            foreach (\explode(';', $headerValue) as $headerPart) {
-                                if (\strtolower(\substr($headerPart, 0, 4)) == 'for=') {
-                                    $for = \explode(']', $headerPart);
-                                    $headerValue = \trim(\substr(\reset($for), 4), " \t\n\r\0\x0B" . "\"[]");
-                                    break;
+            if ($proceedToCheckProxyHeaders) {
+                foreach ($headersToInspect as $header) {
+                    if ($request->hasHeader($header)) {
+                        $ip = (static function () use($request, $header): string {
+                            $items = \explode(',', $request->getHeaderLine($header));
+                            $headerValue = \trim(\reset($items));
+                    
+                            if (\ucfirst($header) == 'Forwarded') {
+                                foreach (\explode(';', $headerValue) as $headerPart) {
+                                    if (\strtolower(\substr($headerPart, 0, 4)) == 'for=') {
+                                        $for = \explode(']', $headerPart);
+                                        $headerValue = \trim(\substr(\reset($for), 4), " \t\n\r\0\x0B" . "\"[]");
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                
-                        return IPAddress::{IPAddress::extract($headerValue)}();
-                    })();
                     
-                    if (IPAddress::isValid($ip)) {
-                        $ipAddress = $ip;
-                        break;
+                            return extract_ip_address($headerValue);
+                        })();
+                        
+                        if (is_valid_ip_address($ip)) {
+                            $ipAddress = $ip;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        if ($ipAddress === '') {
-            throw new \Exception("Error resolving the $attributeName for this request.");
-        }
-
         return IPAddress::{$ipAddress}();
+
+        // TODO: Verify the above implementation. It was adapted without much understanding.
     }
 
     function passwordAuthenticatesUser(
@@ -388,36 +400,25 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): bool
     {
-        return AccessToken::validate(
-            $accessToken,
-            requestOrigin: requestOrigin($request),
-            userContext: requestUserContext($request),
-            userId: (
-                $user = UserWithIdAndRole(
-                    id: Id::{AccessToken::sub($accessToken)}(),
-                    role: AccessToken::role($accessToken)
-                )
-            )->id(),
-            userRole: $user->role(),
-            userAuthorizationKey: $user->authorizationKey()
-        );
-    }
+        $time = \date_create_immutable('now');
 
-    function firebaseAccessTokenAuthenticatesRequest(
-        FirebaseAccessToken $firebaseAccessToken,
-        Request $request
-    ): bool
-    {
-        return FirebaseAccessToken::validate(
-            $firebaseAccessToken,
-            userId: (
-                $user = UserWithIdAndRole(
-                    id: Id::{FirebaseAccessToken::sub($firebaseAccessToken)}(),
-                    role: FirebaseAccessToken::claims($firebaseAccessToken)['role'] ?? ''
-                )
-            )->id(),
-            userRole: $user->role(),
+        $user = UserWithIdAndRole(
+            id: Id::{AccessToken::sub($accessToken)}(),
+            role: AccessToken::role($accessToken)
         );
+
+        return (AccessToken::iss($accessToken) === AppConfig()->domain()) &&
+            (AccessToken::aud($accessToken) === requestOrigin($request)) &&
+            (\in_array(AccessToken::aud($accessToken), AccessControlConfig()->allowedOrigins())) &&
+            ((int) AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
+            ((int) AccessToken::exp($accessToken) === $time->setTimestamp((int) AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (AccessToken::sub($accessToken) === (string) $user->id()) &&
+            (AccessToken::role($accessToken) === $user->role()) &&
+            (AccessToken::fingerprint($accessToken) === \hash_hmac(
+                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                data: requestUserContext($request),
+                key: (string) $user->authorizationKey()
+            ));
     }
 
     function refreshTokenAuthenticatesRequest(
@@ -425,19 +426,25 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): bool
     {
-        return RefreshToken::validate(
-            $refreshToken,
-            requestOrigin: requestOrigin($request),
-            userContext: requestUserContext($request),
-            userId: (
-                $user = UserWithIdAndRole(
-                    id: Id::{RefreshToken::sub($refreshToken)}(),
-                    role: RefreshToken::role($refreshToken)
-                )
-            )->id(),
-            userRole: $user->role(),
-            userAuthorizationKey: $user->authorizationKey()
+        $time = \date_create_immutable('now');
+
+        $user = UserWithIdAndRole(
+            id: Id::{RefreshToken::sub($refreshToken)}(),
+            role: RefreshToken::role($refreshToken)
         );
+
+        return (RefreshToken::iss($refreshToken) === AppConfig()->domain()) &&
+            (RefreshToken::aud($refreshToken) === requestOrigin($request)) &&
+            (\in_array(RefreshToken::aud($refreshToken), AccessControlConfig()->allowedOrigins())) &&
+            ((int) RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
+            ((int) RefreshToken::exp($refreshToken) === \date_create_immutable('now')->setTimestamp((int) RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
+            (RefreshToken::role($refreshToken) === $user->role()) &&
+            (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
+                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                data: requestUserContext($request),
+                key: (string) $user->authorizationKey()
+            ));
     }
 
     function requestUserContext(

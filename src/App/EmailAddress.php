@@ -8,12 +8,7 @@ final class EmailAddress
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        if (\filter_var($value, \FILTER_SANITIZE_EMAIL) === false) {
-            throw new \Exception('Invalid Email Address value.');
-        }
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -28,8 +23,18 @@ final class EmailAddress
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \Exception('Invalid EmailAddress! The value cannot be empty.');
+        }
+
+        if (\filter_var($value, \FILTER_VALIDATE_EMAIL) === false) {
+            throw new \Exception('Invalid EmailAddress!');
+        }
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 }

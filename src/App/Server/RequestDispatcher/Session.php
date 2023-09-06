@@ -4,38 +4,40 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use App\CipherText;
+use App\Nothing;
+use Firebase\JWT\JWT;
+
+use function App\AppConfig;
+use function App\AuthConfig;
+
 interface Session
 {
     public function accessToken(): AccessToken;
 
-    public function firebaseAccessToken(): FirebaseAccessToken;
-
-    public function refreshToken(): RefreshToken;
-
     public function contextCookie(): ContextCookie;
+
+    public function refreshToken(): RefreshToken|Nothing;
 
     public function refresh(): void;
 }
 
 function Session(
     AccessToken $accessToken,
-    FirebaseAccessToken $firebaseAccessToken,
-    RefreshToken $refreshToken,
-    ContextCookie $contextCookie
+    ContextCookie $contextCookie,
+    RefreshToken|Nothing $refreshToken
 ): Session
 {
     return new class(
         accessToken: $accessToken,
-        firebaseAccessToken: $firebaseAccessToken,
-        refreshToken: $refreshToken,
-        contextCookie: $contextCookie
+        contextCookie: $contextCookie,
+        refreshToken: $refreshToken
     ) implements Session
     {
         public function __construct(
             private AccessToken $accessToken,
-            private FirebaseAccessToken $firebaseAccessToken,
-            private RefreshToken $refreshToken,
-            private ContextCookie $contextCookie
+            private ContextCookie $contextCookie,
+            private RefreshToken|Nothing $refreshToken
         ){}
     
         public function accessToken(): AccessToken
@@ -43,19 +45,14 @@ function Session(
             return $this->accessToken;
         }
     
-        public function firebaseAccessToken(): FirebaseAccessToken
-        {
-            return $this->firebaseAccessToken;
-        }
-    
-        public function refreshToken(): RefreshToken
-        {
-            return $this->refreshToken;
-        }
-    
         public function contextCookie(): ContextCookie
         {
             return $this->contextCookie;
+        }
+    
+        public function refreshToken(): RefreshToken|Nothing
+        {
+            return $this->refreshToken;
         }
     
         public function refresh(): void
@@ -64,42 +61,71 @@ function Session(
     
             $user = UserOfSession(session: $this);
     
-            $request = RequestOfUser(user: $user);
+            $requestOrigin = RequestOfUser(user: $user)->getHeader('Origin')[0] ?? '';
     
-            $requestOrigin = $request->getHeader('Origin')[0] ?? '';
-    
-            if (RefreshToken::empty($this->refreshToken)) {
-                throw new \Exception('Refresh Token not set!');
+            $userContext = \bin2hex(\random_bytes(16));
+
+            if ($this->refreshToken instanceof Nothing) {
+                throw new \Exception('The Refresh Token is not set!');
             }
         
             if (RefreshToken::exp($this->refreshToken) <= $time->getTimestamp()) {
-                throw new \Exception('Refresh Token expired!');
+                throw new \Exception('The Refresh Token is expired!');
             }
     
-            $userContext = \bin2hex(\random_bytes(16));
+            $this->accessToken = AccessToken::{
+                JWT::encode(
+                    payload: [
+                        'iss' => AppConfig()->domain(),
+                        'aud' => $requestOrigin,
+                        'iat' => $time->getTimestamp(),
+                        'exp' => $time->modify('+'. AuthConfig()->accessTokenTTLInMinutes().' minutes')->getTimestamp(),
+                        'sub' => (string) $user->id(),
+                        'role' => $user->role(),
+                        'fingerprint' => \hash_hmac(
+                            algo: AuthConfig()->fingerprintHashAlgorithm(),
+                            data: $userContext,
+                            key: CipherText::decrypt($user->authorizationKey())
+                        )
+                    ],
+                    key: AuthConfig()->signingKey(),
+                    alg: AuthConfig()->signingAlgorithm(),
+                )
+            }();
     
-            $this->accessToken = AccessToken::create(
-                requestOrigin: $requestOrigin,
-                userContext: $userContext,
-                userId: $user->id(),
-                userRole: $user->role(),
-                userAuthorizationKey: $user->authorizationKey()
-            );
+            $this->refreshToken = RefreshToken::{
+                JWT::encode(
+                    payload: [
+                        'iss' => AppConfig()->domain(),
+                        'aud' => $requestOrigin,
+                        'iat' => $time->getTimestamp(),
+                        'exp' => $time->modify('+'.AuthConfig()->refreshTokenTTLInMinutes().' minutes')->getTimestamp(),
+                        'sub' => (string) $user->id(),
+                        'role' => $user->role(),
+                        'fingerprint' => \hash_hmac(
+                            algo: AuthConfig()->fingerprintHashAlgorithm(),
+                            data: $userContext,
+                            key: CipherText::decrypt($user->authorizationKey())
+                        )
+                    ],
+                    key: AuthConfig()->signingKey(),
+                    alg: AuthConfig()->signingAlgorithm(),
+                )
+            }();
     
-            $this->firebaseAccessToken = FirebaseAccessToken::create(
-                userId: $user->id(),
-                userRole: $user->role(),
-            );
-    
-            $this->refreshToken = RefreshToken::create(
-                requestOrigin: $requestOrigin,
-                userContext: $userContext,
-                userId: $user->id(),
-                userRole: $user->role(),
-                userAuthorizationKey: $user->authorizationKey()
-            );
-    
-            $this->contextCookie = ContextCookie::create($userContext);
+            $this->contextCookie = ContextCookie::{
+                (function() use($userContext): string {
+                    $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+            
+                    $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
+            
+                    if (AppConfig()->environment() !== 'development') {
+                        $cookie .= '; Secure';
+                    }
+            
+                    return $cookie;
+                })()
+            }();
         }
     };
 }

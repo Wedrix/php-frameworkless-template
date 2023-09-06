@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace App;
 
-final class TelephoneNumber
+final class HTML
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        //TODO: Validate value
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -26,8 +23,18 @@ final class TelephoneNumber
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \Exception('Invalid HTML! The value cannot be empty.');
+        }
+
+        if ((new \DOMDocument())->loadHTML($value) === false) {
+            throw new \Exception('Invalid HTML!');
+        }
+        
         return new self(
-            value: $name
+            value: $value
         );
     }
 }

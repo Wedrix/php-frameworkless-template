@@ -26,7 +26,7 @@ function AddScalarTypeDefinitionWatchtowerCommand(): Command
         ): int
         {
             if (!$output instanceof ConsoleOutputInterface) {
-                throw new \LogicException('This command only accepts an instance of "ConsoleOutputInterface".');
+                throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
             }
             
             $typeName = (function () use ($input, $output): string {

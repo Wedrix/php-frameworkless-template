@@ -6,14 +6,9 @@ namespace App;
 
 final class Text
 {
-    private readonly string $value;
-
     private function __construct(
-        string $value
-    )
-    {
-        $this->value = \strip_tags_with_content($value);
-    }
+        private readonly string $value
+    ){}
 
     public function __toString(): string
     {
@@ -28,8 +23,18 @@ final class Text
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \Exception('Invalid Text! The value cannot be empty.');
+        }
+
+        if ($value !== \strip_tags_with_content($value)) {
+            throw new \Exception('Invalid Text!');
+        }
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 

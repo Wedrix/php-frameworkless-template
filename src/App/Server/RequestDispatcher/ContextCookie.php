@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
-use function App\AppConfig;
-use function App\AuthConfig;
-
 final class ContextCookie
 {
     private function __construct(
@@ -26,23 +23,16 @@ final class ContextCookie
         array $arguments
     ): self
     {
-        return new self(
-            value: $name
-        );
-    }
+        $value = \trim($name);
 
-    public static function create(
-        string $userContext
-    ): self
-    {
-        $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
-
-        $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
-
-        if (AppConfig()->environment() !== 'development') {
-            $cookie .= '; Secure';
+        if (empty($value)) {
+            throw new \Exception('Invalid ContextCookie! The value cannot be empty.');
         }
 
-        return self::{$cookie}();
+        //TODO: Validate Value
+
+        return new self(
+            value: $value
+        );
     }
 }
