@@ -25,7 +25,7 @@ function APIGatekeeper(): Gatekeeper
     
             $previousApiAccess = $cacheItem->isHit() 
                                     ? $cacheItem->get() 
-                                    : new _SerializableAccess(
+                                    : Access(
                                         count: 0,
                                         resetTimestamp: $time->modify(
                                             '+'.AccessControlConfig()->apiAccessWindow().' seconds'
@@ -34,7 +34,7 @@ function APIGatekeeper(): Gatekeeper
     
             Cache()->save(
                 $cacheItem->set(
-                            $currentApiAccess = new _SerializableAccess(
+                            $currentApiAccess = Access(
                                 count: $previousApiAccess->count() + 1,
                                 resetTimestamp: $previousApiAccess->resetTimestamp()
                             )

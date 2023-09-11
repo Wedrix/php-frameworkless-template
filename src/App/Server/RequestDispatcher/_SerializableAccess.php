@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+/**
+ * Needed since PHP cannot serialize Anonymous Classes (as of v8.2).
+ */
 final class _SerializableAccess implements Access
 {
     public function __construct(

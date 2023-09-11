@@ -65,6 +65,7 @@
             "src/App/Console/WatchtowerConsole.php",
             "src/App/DataMapper/NamingStrategy.php",
             "src/App/DataMapper/UnderscoreNamingStrategy.php",
+            "src/App/Server/RequestDispatcher/Access.php",
             "src/App/Server/RequestDispatcher/AddIPAddressToRequestMiddleware.php",
             "src/App/Server/RequestDispatcher/AssociateUserWithRequestMiddleware.php",
             "src/App/Server/RequestDispatcher/APIGatekeeper.php",

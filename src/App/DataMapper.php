@@ -4,54 +4,40 @@ declare(strict_types=1);
 
 namespace App;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
-use LongitudeOne\Spatial\DBAL\Types\Geography\PointType as GeoPointType;
-use LongitudeOne\Spatial\ORM\Query\AST\Functions\Standard\StDistance;
 
 use function App\DataMapper\NamingStrategy;
+
+interface DataMapper extends EntityManagerInterface
+{
+    /**
+    * Finds an object by its identifier.
+    *
+    * This is just a convenient shortcut for getRepository($className)->find($id).
+    *
+    * @param string $className The class name of the object to find.
+    * @param mixed  $id        The identity of the object to find.
+    * @param mixed $lockMode
+    * @param mixed $lockVersion
+    * @psalm-param class-string<T> $className
+    *
+    * @return object The found object.
+    * @psalm-return T
+    *
+    * @template T of object
+    */
+   public function find($className, $id, $lockMode = null, $lockVersion = null): object;
+}
 
 function DataMapper(): DataMapper
 {
     static $dataMapper;
     
-    $dataMapper ??= new DataMapper();
-
-    /**
-     * Reset the EntityManager if closed
-     * Doctrine closes the EntityManager on some Exceptions
-     */
-    if (!$dataMapper->isOpen()) {
-        $dataMapper = new DataMapper(
-            closed: $dataMapper
-        );
-    }
-
-    return $dataMapper;
-}
-
-final class DataMapper extends EntityManagerDecorator
-{
-    public function __construct(
-        ?self $closed = null
-    )
-    {
-        if (!\is_null($closed)) {
-            parent::__construct(
-                wrapped: EntityManager::create(
-                    /**
-                     * No need to check for an open connection since it's handled internally
-                     * https://github.com/doctrine/dbal/pull/4966#issuecomment-1015006379
-                     */
-                    connection: $closed->getConnection(),
-                    config: $closed->getConfiguration(),
-                    eventManager: $closed->getEventManager()
-                )
-            );
-        } 
-        else {
+    $dataMapper ??= new class() extends EntityManagerDecorator implements DataMapper {
+        public function __construct() {
             $entityManagerConfig = ORMSetup::createAttributeMetadataConfiguration(
                 paths: DoctrineConfig()->paths(), 
                 isDevMode: DoctrineConfig()->isDevMode(), 
@@ -60,8 +46,6 @@ final class DataMapper extends EntityManagerDecorator
             );
             
             $entityManagerConfig->setNamingStrategy(NamingStrategy());
-    
-            $entityManagerConfig->addCustomNumericFunction('ST_Distance', StDistance::class);
             
             /**
              * @see https://github.com/doctrine/orm/issues/9432#issuecomment-1384115782
@@ -69,39 +53,54 @@ final class DataMapper extends EntityManagerDecorator
             $entityManagerConfig->setLazyGhostObjectEnabled(true);
     
             $entityManager = EntityManager::create(DoctrineConfig()->connection(), $entityManagerConfig);
-            
-            Type::addType('geopoint', GeoPointType::class);
-    
-            $dbPlatform = $entityManager->getConnection()
-                                        ->getDatabasePlatform();
-    
-            $dbPlatform->registerDoctrineTypeMapping('geography', 'geopoint');
     
             parent::__construct(
                 wrapped: $entityManager
             );
         }
-    }
+
+        public function find($className, $id, $lockMode = null, $lockVersion = null): object
+        {
+            return parent::find($className, $id, $lockMode, $lockVersion)
+                ?? throw new \Exception(
+                    "The $className entity with id '$id' was not found."
+                );
+        }
+    };
 
     /**
-     * Finds an object by its identifier.
-     *
-     * This is just a convenient shortcut for getRepository($className)->find($id).
-     *
-     * @param string $className The class name of the object to find.
-     * @param mixed  $id        The identity of the object to find.
-     * @psalm-param class-string<T> $className
-     *
-     * @return object The found object.
-     * @psalm-return T
-     *
-     * @template T of object
+     * Reset the EntityManager if closed
+     * Doctrine closes the EntityManager on some Exceptions
      */
-    public function find($className, $id, $lockMode = null, $lockVersion = null): object
-    {
-        return parent::find($className, $id, $lockMode, $lockVersion)
-            ?? throw new \Exception(
-                "The $className entity with id '$id' was not found."
-            );
+    if (!$dataMapper->isOpen()) {
+        $dataMapper = new class(
+            closed: $dataMapper 
+        ) extends EntityManagerDecorator implements DataMapper {
+            public function __construct(
+                EntityManagerDecorator $closed
+            ) {
+                parent::__construct(
+                    wrapped: EntityManager::create(
+                        /**
+                         * No need to check for an open connection since it's handled internally
+                         * @see https://github.com/doctrine/dbal/pull/4966#issuecomment-1015006379
+                         */
+                        connection: $closed->getConnection(),
+                        config: $closed->getConfiguration(),
+                        eventManager: $closed->getEventManager()
+                    )
+                );
+            }
+
+            public function find($className, $id, $lockMode = null, $lockVersion = null): object
+            {
+                return parent::find($className, $id, $lockMode, $lockVersion)
+                    ?? throw new \Exception(
+                        "The $className entity with id '$id' was not found."
+                    );
+            }
+        };
     }
+
+    return $dataMapper;
 }
