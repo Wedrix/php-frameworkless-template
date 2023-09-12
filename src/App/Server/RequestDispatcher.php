@@ -46,6 +46,7 @@ namespace App\Server
 namespace App\Server\RequestDispatcher
 {
     use App\Hash;
+    use App\Id;
     use App\Password;
     use Comet\Request;
 

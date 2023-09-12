@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use App\Id;
 use App\Nothing;
 use Comet\Request;
 use Psr\Http\Message\ResponseInterface;

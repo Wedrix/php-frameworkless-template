@@ -35,11 +35,11 @@ function capitalize(
  */
 function strip_tags_with_content(
     string $text, 
-    string $tags = '', 
+    string $allowed_tags = '', 
     bool $invert = false
 ): string
 {
-    \preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', \trim($tags), $tags);
+    \preg_match_all('/<(.+?)[\s]*\/?[\s]*>/si', \trim($allowed_tags), $tags);
   
     $tags = \array_unique($tags[1]);
   
