@@ -27,10 +27,9 @@ function AddIPAddressToRequestMiddleware(): Middleware
     
             return $handler->handle(
                 $request->withAttribute(
-                    attribute: $attributeName = IPAddressParserConfig()->attributeName(),
+                    attribute: IPAddressParserConfig()->attributeName(),
                     value: requestIPAddress(
                         request: $request,
-                        attributeName: $attributeName,
                         checkProxyHeaders: IPAddressParserConfig()->checkProxyHeaders(),
                         headersToInspect: IPAddressParserConfig()->headersToInspect(),
                         trustedProxies: IPAddressParserConfig()->trustedProxies()

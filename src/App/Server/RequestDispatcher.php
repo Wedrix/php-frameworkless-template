@@ -197,14 +197,12 @@ namespace App\Server\RequestDispatcher
      * @see https://github.com/akrabat/ip-address-middleware/blob/main/src/IpAddress.php
      * 
      * @param Request $request The request instance
-     * @param string $attributeName Name of attribute added to ServerRequest object
      * @param bool $checkProxyHeaders Whether to use proxy headers to determine client IP address
      * @param array<string> $headersToInspect List of proxy headers inspected for the client IP address
      * @param array<string> $trustedProxies List of trusted proxy addresses (accepts wildcards and CIDR notation)
      */
     function requestIPAddress(
         Request $request,
-        string $attributeName,
         bool $checkProxyHeaders,
         array $headersToInspect,
         array $trustedProxies
@@ -270,7 +268,7 @@ namespace App\Server\RequestDispatcher
                  * @return array<int>
                  */
                 $trustedCidrs[] = (static function() use ($proxy): array {
-                    list($subnet, $bits) = \explode('/', $proxy, 2);
+                    [$subnet, $bits] = \explode('/', $proxy, 2);
                     $subnet = \ip2long($subnet);
                     $mask = -1 << (32 - (int) $bits);
                     $min = $subnet & $mask;
@@ -291,9 +289,9 @@ namespace App\Server\RequestDispatcher
          * Connection::getRemoteAddress() returns string
          * @see https://github.com/walkor/workerman/blob/f3856199e0105eb66b35dc4c7d091e2283e4b682/src/Connection/ConnectionInterface.php#L124C16-L124C16 
          */
-        $remoteAddress = extract_ip_address($request->connection->getRemoteAddress());
+        $remoteAddress = \extract_ip_address($request->connection->getRemoteAddress());
                         
-        if (is_valid_ip_address($remoteAddress)) {
+        if (\is_valid_ip_address($remoteAddress)) {
             $ipAddress = $remoteAddress;
         }
 
@@ -371,10 +369,10 @@ namespace App\Server\RequestDispatcher
                                 }
                             }
                     
-                            return extract_ip_address($headerValue);
+                            return \extract_ip_address($headerValue);
                         })();
                         
-                        if (is_valid_ip_address($ip)) {
+                        if (\is_valid_ip_address($ip)) {
                             $ipAddress = $ip;
                             break;
                         }
