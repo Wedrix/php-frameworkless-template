@@ -55,24 +55,12 @@ namespace App\Server\RequestDispatcher
     use function App\AuthConfig;
 
     /**
-     * @var \WeakMap<Request,User>
+     * @var \WeakMap<Request,User> $requests_users
+     * @var \WeakMap<User,Request> $users_requests
+     * @var \WeakMap<Session,User> $sessions_users
+     * @var \WeakMap<User,Session> $users_sessions
      */
-    global $requests_users;
-    
-    /**
-     * @var \WeakMap<User,Request>
-     */
-    global $users_requests;
-    
-    /**
-     * @var \WeakMap<Session,User>
-     */
-    global $sessions_users;
-    
-    /**
-     * @var \WeakMap<User,Session>
-     */
-    global $users_sessions;
+    global $requests_users, $users_requests, $sessions_users, $users_sessions;
     
     $requests_users = new \WeakMap();
     $users_requests = new \WeakMap();
@@ -409,8 +397,8 @@ namespace App\Server\RequestDispatcher
         return (AccessToken::iss($accessToken) === AppConfig()->domain()) &&
             (AccessToken::aud($accessToken) === requestOrigin($request)) &&
             (\in_array(AccessToken::aud($accessToken), AccessControlConfig()->allowedOrigins())) &&
-            ((int) AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
-            ((int) AccessToken::exp($accessToken) === $time->setTimestamp((int) AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
+            (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
             (AccessToken::sub($accessToken) === (string) $user->id()) &&
             (AccessToken::role($accessToken) === $user->role()) &&
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
@@ -435,8 +423,8 @@ namespace App\Server\RequestDispatcher
         return (RefreshToken::iss($refreshToken) === AppConfig()->domain()) &&
             (RefreshToken::aud($refreshToken) === requestOrigin($request)) &&
             (\in_array(RefreshToken::aud($refreshToken), AccessControlConfig()->allowedOrigins())) &&
-            ((int) RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
-            ((int) RefreshToken::exp($refreshToken) === \date_create_immutable('now')->setTimestamp((int) RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
+            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
             (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
             (RefreshToken::role($refreshToken) === $user->role()) &&
             (RefreshToken::fingerprint($refreshToken) === \hash_hmac(

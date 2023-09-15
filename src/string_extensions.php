@@ -43,7 +43,7 @@ function strip_tags_with_content(
   
     $tags = \array_unique($tags[1]);
   
-    if (\is_array($tags) && (\count($tags) > 0)) {
+    if (\count($tags) > 0) {
         if ($invert == false) {
             return \preg_replace('@<(?!(?:'. \implode('|', $tags) .')\b)(\w+)\b.*?>.*?</\1>@si', '', $text) 
                 ?? throw new \Exception("Error parsing '$text'.");

@@ -9,3 +9,4 @@ parameters:
 		- src
 	doctrine:
 		objectManagerLoader: tests/DataMapper.php
+	rememberPossiblyImpureFunctionValues: false
