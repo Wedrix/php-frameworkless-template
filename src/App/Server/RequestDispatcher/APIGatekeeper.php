@@ -10,6 +10,9 @@ use function App\AccessControlConfig;
 use function App\Cache;
 use function App\IPAddressParserConfig;
 
+/**
+ * Implements the Sliding Window algorithm
+ */
 function APIGatekeeper(): Gatekeeper
 {
     static $apiGateKeeper;
@@ -20,39 +23,36 @@ function APIGatekeeper(): Gatekeeper
         ): void
         {
             $time = \date_create_immutable('now');
+
+            // Fetch user accesses
+            $cacheItem = Cache()->getItem(key: 'api_access_'.$request->getAttribute(IPAddressParserConfig()->attributeName()));
     
-            $cacheItem = Cache()->getItem(key: 'api_gatekeeper'.$request->getAttribute(IPAddressParserConfig()->attributeName()));
-    
-            $previousApiAccess = $cacheItem->isHit() 
+            $userAccesses = $cacheItem->isHit() 
                                     ? $cacheItem->get() 
-                                    : Access(
-                                        count: 0,
-                                        resetTimestamp: $time->modify(
-                                            '+'.AccessControlConfig()->apiAccessWindow().' seconds'
-                                        )->getTimestamp()
-                                    );
-    
-            Cache()->save(
-                $cacheItem->set(
-                            $currentApiAccess = Access(
-                                count: $previousApiAccess->count() + 1,
-                                resetTimestamp: $previousApiAccess->resetTimestamp()
-                            )
-                        )
-                        ->expiresAfter(
-                            ($currentApiAccess->count() > AccessControlConfig()->apiAccessLimit()) 
-                                ? intval(
-                                    min(
-                                        AccessControlConfig()->apiAccessWindowGrowthFactor() 
-                                            ** ($currentApiAccess->count() - AccessControlConfig()->apiAccessLimit()),
-                                        AccessControlConfig()->apiAccessWindowMaxSize()
-                                    )
-                                )
-                                : $previousApiAccess->resetTimestamp() - $time->getTimestamp()
-                        )
+                                    : [];
+
+            // Add current timestamp as new user access
+            $userAccesses[] = WindowAccess(
+                timestamp: $time->getTimestamp()
             );
-    
-            if ($currentApiAccess->count() > AccessControlConfig()->apiAccessLimit()) {
+
+            // Filter user accesses where timestamps < current timestamp - access window size in seconds
+            $userAccesses = \array_filter(
+                $userAccesses,
+                fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - AccessControlConfig()->apiAccessWindowSizeInSeconds())
+            );
+
+            // Save filtered user accesses
+            Cache()->save(
+                $cacheItem->set($userAccesses)
+                        ->expiresAfter(AccessControlConfig()->apiAccessWindowSizeInSeconds())
+            );
+
+            // Count filtered user accesses
+            $accessCount = \count($userAccesses);
+
+            // Reject request if user accesses count > limit
+            if ($accessCount > AccessControlConfig()->apiAccessLimit()) {
                 throw new \Exception('Rate limit exceeded.');
             }
         }

@@ -32,11 +32,15 @@ interface AccessControlConfig
 
     public function apiAccessLimit(): int;
 
-    public function apiAccessWindow(): int;
+    public function apiAccessWindowSizeInSeconds(): int;
 
-    public function apiAccessWindowGrowthFactor(): int;
+    public function logInTokenLimit(): int;
 
-    public function apiAccessWindowMaxSize(): int;
+    public function logInTokenReplenishingRatePerSecond(): float;
+
+    public function signUpTokenLimit(): int;
+
+    public function signUpTokenReplenishingRatePerSecond(): float;
 }
 
 function AccessControlConfig(): AccessControlConfig
@@ -75,11 +79,7 @@ function AccessControlConfig(): AccessControlConfig
     
         private readonly int $apiAccessLimit;
     
-        private readonly int $apiAccessWindow;
-    
-        private readonly int $apiAccessWindowGrowthFactor;
-    
-        private readonly int $apiAccessWindowMaxSize;
+        private readonly int $apiAccessWindowSizeInSeconds;
 
         public function __construct()
         {
@@ -133,40 +133,16 @@ function AccessControlConfig(): AccessControlConfig
                 return (int) $apiAccessLimit;
             })();
     
-            $this->apiAccessWindow = (function (): int {
-                $apiAccessWindow = $this->configValues['ACCESS_CONTROL_API_ACCESS_WINDOW'] ?? throw new \Exception(
-                    message: 'The Access Control api access window is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_WINDOW\' to the .env file.'
+            $this->apiAccessWindowSizeInSeconds = (function (): int {
+                $apiAccessWindowSizeInSeconds = $this->configValues['ACCESS_CONTROL_API_ACCESS_WINDOW_SIZE_IN_SECONDS'] ?? throw new \Exception(
+                    message: 'The Access Control api access window is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_WINDOW_SIZE_IN_SECONDS\' to the .env file.'
                 );
         
-                if(!\ctype_digit($apiAccessWindow)) {
-                    throw new \Exception('The Access Control api access window is invalid. Try seting a correct int value.');
+                if(!\ctype_digit($apiAccessWindowSizeInSeconds)) {
+                    throw new \Exception('The Access Control Api Access Window in Seconds is invalid. Try seting a correct int value.');
                 }
         
-                return (int) $apiAccessWindow;
-            })();
-    
-            $this->apiAccessWindowGrowthFactor = (function (): int {
-                $apiAccessWindowGrowthFactor = $this->configValues['ACCESS_CONTROL_API_ACCESS_WINDOW_GROWTH_FACTOR'] ?? throw new \Exception(
-                    message: 'The Access Control api access window growth factor is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_WINDOW_GROWTH_FACTOR\' to the .env file.'
-                );
-        
-                if(!\ctype_digit($apiAccessWindowGrowthFactor)) {
-                    throw new \Exception('The Access Control api access window growth factor is invalid. Try seting a correct int value.');
-                }
-        
-                return (int) $apiAccessWindowGrowthFactor;
-            })();
-    
-            $this->apiAccessWindowMaxSize = (function (): int {
-                $apiAccessWindowMaxSize = $this->configValues['ACCESS_CONTROL_API_ACCESS_WINDOW_MAX_SIZE'] ?? throw new \Exception(
-                    message: 'The Access Control api access window max size is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_WINDOW_MAX_SIZE\' to the .env file.'
-                );
-        
-                if(!\ctype_digit($apiAccessWindowMaxSize)) {
-                    throw new \Exception('The Access Control api access window max size is invalid. Try seting a correct int value.');
-                }
-        
-                return (int) $apiAccessWindowMaxSize;
+                return (int) $apiAccessWindowSizeInSeconds;
             })();
         }
 
@@ -200,19 +176,9 @@ function AccessControlConfig(): AccessControlConfig
             return $this->apiAccessLimit;
         }
     
-        public function apiAccessWindow(): int
+        public function apiAccessWindowSizeInSeconds(): int
         {
-            return $this->apiAccessWindow;
-        }
-    
-        public function apiAccessWindowGrowthFactor(): int
-        {
-            return $this->apiAccessWindowGrowthFactor;
-        }
-    
-        public function apiAccessWindowMaxSize(): int
-        {
-            return $this->apiAccessWindowMaxSize;
+            return $this->apiAccessWindowSizeInSeconds;
         }
     };
 

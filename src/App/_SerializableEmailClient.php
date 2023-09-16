@@ -17,33 +17,43 @@ final class _SerializableEmailClient implements EmailClient
         Email $email
     ): void
     {
+        $subject = $email->subject();
+        $sender = $email->sender();
+        $recipients = $email->recipients();
+        $carbonCopyRecipients = $email->carbonCopyRecipients();
+        $blindCarbonCopyRecipients = $email->blindCarbonCopyRecipients();
+        $replyTo = $email->replyTo();
+        $textBody = $email->textBody();
+        $htmlBody = $email->htmlBody();
+        $attachments = $email->attachments();
+
         $symfonyEmail = (new SymfonyEmail())
-            ->subject((string) $email->subject())
-            ->from((string) $email->sender())
-            ->to(...\explode(',', (string) $email->recipients()));
+            ->subject((string) $subject)
+            ->from((string) $sender)
+            ->to(...\explode(',', (string) $recipients));
 
-        if (!$email->carbonCopyRecipients() instanceof EmptyText) {
-            $symfonyEmail->cc(...\explode(',', (string) $email->carbonCopyRecipients()));
+        if (!($carbonCopyRecipients instanceof Nothing)) {
+            $symfonyEmail->cc(...\explode(',', (string) $carbonCopyRecipients));
         }
 
-        if (!$email->blindCarbonCopyRecipients() instanceof EmptyText) {
-            $symfonyEmail->bcc(...\explode(',', (string) $email->blindCarbonCopyRecipients()));
+        if (!($blindCarbonCopyRecipients instanceof Nothing)) {
+            $symfonyEmail->bcc(...\explode(',', (string) $blindCarbonCopyRecipients));
         }
 
-        if (!$email->replyTo() instanceof EmptyText) {
-            $symfonyEmail->replyTo((string) $email->replyTo());
+        if (!($replyTo instanceof Nothing)) {
+            $symfonyEmail->replyTo((string) $replyTo);
         }
 
-        if (!$email->textBody() instanceof EmptyText) {
-            $symfonyEmail->text((string) $email->textBody());
+        if (!($textBody instanceof Nothing)) {
+            $symfonyEmail->text((string) $textBody);
         }
 
-        if (!$email->htmlBody() instanceof EmptyText) {
-            $symfonyEmail->html((string) $email->htmlBody());
+        if (!($htmlBody instanceof Nothing)) {
+            $symfonyEmail->html((string) $htmlBody);
         }
 
-        if (!$email->attachments() instanceof EmptyText) {
-            foreach (\explode(',', (string) $email->attachments()) as $file) {
+        if (!($attachments instanceof Nothing)) {
+            foreach (\explode(',', (string) $attachments) as $file) {
                 $symfonyEmail->addPart(new DataPart(new File($file)));
             }
         }
