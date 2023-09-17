@@ -31,7 +31,7 @@ function GraphQLController(): Controller
                 \is_string(
                     $graphQLResult = \json_encode(
                         WatchtowerExecutor()->executeQuery(
-                            source: $input['query'] ?? '',
+                            source: $input['query'] ?? throw new \Exception('Empty query.'),
                             rootValue: [],
                             contextValue: [
                                 'request' => $request,

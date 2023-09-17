@@ -12,29 +12,29 @@ interface Email
 
     public function recipients(): EmailAddresses;
 
-    public function carbonCopyRecipients(): EmailAddresses|Nothing;
+    public function carbonCopyRecipients(): ?EmailAddresses;
 
-    public function blindCarbonCopyRecipients(): EmailAddresses|Nothing;
+    public function blindCarbonCopyRecipients(): ?EmailAddresses;
 
-    public function replyTo(): EmailAddress|Nothing;
+    public function replyTo(): ?EmailAddress;
 
-    public function textBody(): Text|Nothing;
+    public function textBody(): ?Text;
 
-    public function htmlBody(): HTML|Nothing;
+    public function htmlBody(): ?HTML;
 
-    public function attachments(): FilePaths|Nothing;
+    public function attachments(): ?FilePaths;
 }
 
 function Email(
     Text $subject,
     EmailAddress $sender,
     EmailAddresses $recipients,
-    EmailAddresses|Nothing $carbonCopyRecipients,
-    EmailAddresses|Nothing $blindCarbonCopyRecipients,
-    EmailAddress|Nothing $replyTo,
-    Text|Nothing $textBody,
-    HTML|Nothing $htmlBody,
-    FilePaths|Nothing $attachments
+    ?EmailAddresses $carbonCopyRecipients,
+    ?EmailAddresses $blindCarbonCopyRecipients,
+    ?EmailAddress $replyTo,
+    ?Text $textBody,
+    ?HTML $htmlBody,
+    ?FilePaths $attachments
 ): Email
 {
     return new class(
@@ -53,12 +53,12 @@ function Email(
             private readonly Text $subject,
             private readonly EmailAddress $sender,
             private readonly EmailAddresses $recipients,
-            private readonly EmailAddresses|Nothing $carbonCopyRecipients,
-            private readonly EmailAddresses|Nothing $blindCarbonCopyRecipients,
-            private readonly EmailAddress|Nothing $replyTo,
-            private readonly Text|Nothing $textBody,
-            private readonly HTML|Nothing $htmlBody,
-            private readonly FilePaths|Nothing $attachments
+            private readonly ?EmailAddresses $carbonCopyRecipients,
+            private readonly ?EmailAddresses $blindCarbonCopyRecipients,
+            private readonly ?EmailAddress $replyTo,
+            private readonly ?Text $textBody,
+            private readonly ?HTML $htmlBody,
+            private readonly ?FilePaths $attachments
         ){}
     
         public function subject(): Text
@@ -76,32 +76,32 @@ function Email(
             return $this->recipients;
         }
 
-        public function carbonCopyRecipients(): EmailAddresses|Nothing
+        public function carbonCopyRecipients(): ?EmailAddresses
         {
             return $this->carbonCopyRecipients;
         }
 
-        public function blindCarbonCopyRecipients(): EmailAddresses|Nothing
+        public function blindCarbonCopyRecipients(): ?EmailAddresses
         {
             return $this->blindCarbonCopyRecipients;
         }
 
-        public function replyTo(): EmailAddress|Nothing
+        public function replyTo(): ?EmailAddress
         {
             return $this->replyTo;
         }
 
-        public function textBody(): Text|Nothing
+        public function textBody(): ?Text
         {
             return $this->textBody;
         }
 
-        public function htmlBody(): HTML|Nothing
+        public function htmlBody(): ?HTML
         {
             return $this->htmlBody;
         }
 
-        public function attachments(): FilePaths|Nothing
+        public function attachments(): ?FilePaths
         {
             return $this->attachments;
         }

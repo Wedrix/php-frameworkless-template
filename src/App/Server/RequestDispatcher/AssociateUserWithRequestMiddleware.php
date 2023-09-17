@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Server\RequestDispatcher;
 
 use App\Id;
-use App\Nothing;
 use Comet\Request;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -28,16 +27,16 @@ function AssociateUserWithRequestMiddleware(): Middleware
                 throw new \Exception('Invalid request. Must be an instance of \\Comet\\Request.');
             }
 
-            $authorizationHeader = $request->getHeader('Authorization')[0] ?? '';
-            $reauthorizationHeader = $request->getHeader('Reauthorization')[0] ?? '';
+            $authorizationHeader = $request->getHeader('Authorization')[0] ?? null;
+            $reauthorizationHeader = $request->getHeader('Reauthorization')[0] ?? null;
 
-            $accessToken = empty($authorizationHeader)
-                ? Nothing::{''}()
+            $accessToken = \is_null($authorizationHeader)
+                ? null
                 : AccessToken::{
                     \explode('Bearer ', $authorizationHeader)[1] ?? throw new \Exception('Invalid \'Authorization\' header!')
                 }();
-            $refreshToken = empty($reauthorizationHeader)
-                ? Nothing::{''}()
+            $refreshToken = \is_null($reauthorizationHeader)
+                ? null
                 : RefreshToken::{
                     \explode('Bearer ', $reauthorizationHeader)[1] ?? throw new \Exception('Invalid \'Reauthorization\' header!')
                 }();
@@ -45,13 +44,13 @@ function AssociateUserWithRequestMiddleware(): Middleware
             $userContext = requestUserContext($request);
 
             if (
-                !($accessToken instanceof Nothing) && !empty($requestOrigin) && !empty($userContext)
+                !\is_null($accessToken) && !\is_null($requestOrigin) && !\is_null($userContext)
             ) {
                 if (!accessTokenAuthenticatesRequest($accessToken, $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
 
-                if (!($refreshToken instanceof Nothing) && !refreshTokenAuthenticatesRequest($refreshToken, $request)) {
+                if (!\is_null($refreshToken) && !refreshTokenAuthenticatesRequest($refreshToken, $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
                 

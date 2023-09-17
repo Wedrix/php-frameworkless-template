@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Server\RequestDispatcher;
 
 use App\CipherText;
-use App\Nothing;
 use Firebase\JWT\JWT;
 
 use function App\AppConfig;
@@ -17,7 +16,7 @@ interface Session
 
     public function contextCookie(): ContextCookie;
 
-    public function refreshToken(): RefreshToken|Nothing;
+    public function refreshToken(): ?RefreshToken;
 
     public function refresh(): void;
 }
@@ -25,7 +24,7 @@ interface Session
 function Session(
     AccessToken $accessToken,
     ContextCookie $contextCookie,
-    RefreshToken|Nothing $refreshToken
+    ?RefreshToken $refreshToken
 ): Session
 {
     return new class(
@@ -37,7 +36,7 @@ function Session(
         public function __construct(
             private AccessToken $accessToken,
             private ContextCookie $contextCookie,
-            private RefreshToken|Nothing $refreshToken
+            private ?RefreshToken $refreshToken
         ){}
     
         public function accessToken(): AccessToken
@@ -50,7 +49,7 @@ function Session(
             return $this->contextCookie;
         }
     
-        public function refreshToken(): RefreshToken|Nothing
+        public function refreshToken(): ?RefreshToken
         {
             return $this->refreshToken;
         }
@@ -60,12 +59,14 @@ function Session(
             $time = \date_create_immutable('now');
     
             $user = UserOfSession(session: $this);
+
+            $request = RequestOfUser($user);
     
-            $requestOrigin = RequestOfUser(user: $user)->getHeader('Origin')[0] ?? '';
+            $requestOrigin = requestOrigin($request);
     
             $userContext = \bin2hex(\random_bytes(16));
 
-            if ($this->refreshToken instanceof Nothing) {
+            if (\is_null($this->refreshToken)) {
                 throw new \Exception('The Refresh Token is not set!');
             }
         

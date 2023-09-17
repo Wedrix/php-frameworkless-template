@@ -403,7 +403,7 @@ namespace App\Server\RequestDispatcher
             (AccessToken::role($accessToken) === $user->role()) &&
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
-                data: requestUserContext($request),
+                data: requestUserContext($request) ?? throw new \Exception('The user context is not set for the request.'),
                 key: (string) $user->authorizationKey()
             ));
     }
@@ -429,22 +429,22 @@ namespace App\Server\RequestDispatcher
             (RefreshToken::role($refreshToken) === $user->role()) &&
             (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
-                data: requestUserContext($request),
+                data: requestUserContext($request) ?? throw new \Exception('The user context is not set for the request.'),
                 key: (string) $user->authorizationKey()
             ));
     }
 
     function requestUserContext(
         Request $request
-    ): string
+    ): ?string
     {
-        return $request->getCookieParams()['user_context'] ?? '';
+        return $request->getCookieParams()['user_context'] ?? null;
     }
 
     function requestOrigin(
         Request $request
-    ): string
+    ): ?string
     {
-        return $request->getHeader('Origin')[0] ?? '';
+        return $request->getHeader('Origin')[0] ?? null;
     }
 }

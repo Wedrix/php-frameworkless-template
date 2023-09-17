@@ -32,27 +32,27 @@ final class _SerializableEmailClient implements EmailClient
             ->from((string) $sender)
             ->to(...\explode(',', (string) $recipients));
 
-        if (!($carbonCopyRecipients instanceof Nothing)) {
+        if (!\is_null($carbonCopyRecipients)) {
             $symfonyEmail->cc(...\explode(',', (string) $carbonCopyRecipients));
         }
 
-        if (!($blindCarbonCopyRecipients instanceof Nothing)) {
+        if (!\is_null($blindCarbonCopyRecipients)) {
             $symfonyEmail->bcc(...\explode(',', (string) $blindCarbonCopyRecipients));
         }
 
-        if (!($replyTo instanceof Nothing)) {
+        if (!\is_null($replyTo)) {
             $symfonyEmail->replyTo((string) $replyTo);
         }
 
-        if (!($textBody instanceof Nothing)) {
+        if (!\is_null($textBody)) {
             $symfonyEmail->text((string) $textBody);
         }
 
-        if (!($htmlBody instanceof Nothing)) {
+        if (!\is_null($htmlBody)) {
             $symfonyEmail->html((string) $htmlBody);
         }
 
-        if (!($attachments instanceof Nothing)) {
+        if (!\is_null($attachments)) {
             foreach (\explode(',', (string) $attachments) as $file) {
                 $symfonyEmail->addPart(new DataPart(new File($file)));
             }

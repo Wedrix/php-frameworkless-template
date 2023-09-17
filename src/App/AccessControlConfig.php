@@ -33,14 +33,6 @@ interface AccessControlConfig
     public function apiAccessLimit(): int;
 
     public function apiAccessWindowSizeInSeconds(): int;
-
-    public function logInTokenLimit(): int;
-
-    public function logInTokenReplenishingRatePerSecond(): float;
-
-    public function signUpTokenLimit(): int;
-
-    public function signUpTokenReplenishingRatePerSecond(): float;
 }
 
 function AccessControlConfig(): AccessControlConfig
