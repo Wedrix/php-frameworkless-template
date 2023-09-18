@@ -8,6 +8,8 @@ use Dotenv\Dotenv;
 
 interface AccessControlConfig
 {
+    public function maxQueryDepth(): int;
+
     /**
      * @return array<string>
      */
@@ -47,6 +49,8 @@ function AccessControlConfig(): AccessControlConfig
          */
         private readonly array $configValues;
 
+        private readonly int $maxQueryDepth;
+
         /**
          * @var array<string>
          */
@@ -78,6 +82,18 @@ function AccessControlConfig(): AccessControlConfig
             $this->baseDirectory = \dirname(__FILE__, 3);
 
             $this->configValues = Dotenv::createArrayBacked(paths: $this->baseDirectory)->load();
+
+            $this->maxQueryDepth = (function (): int {
+                $signUpTokenLimit = $this->configValues['ACCESS_CONTROL_MAX_QUERY_DEPTH'] ?? throw new \Exception(
+                    message: 'The Access Control Max Query Depth is not set. Try adding \'ACCESS_CONTROL_MAX_QUERY_DEPTH\' to the .env file.'
+                );
+        
+                if(!\ctype_digit($signUpTokenLimit)) {
+                    throw new \Exception('The Access Control Max Query Depth is invalid. Try seting a correct int value.');
+                }
+        
+                return (int) $signUpTokenLimit;
+            })();
 
             $this->allowedOrigins = \explode(',', $this->configValues['ACCESS_CONTROL_ALLOWED_ORIGINS'] ?? throw new \Exception(
                 message: 'The Access Control allowed origins is not set. Try adding \'ACCESS_CONTROL_ALLOWED_ORIGINS\' to the .env file.'
@@ -136,6 +152,11 @@ function AccessControlConfig(): AccessControlConfig
         
                 return (int) $apiAccessWindowSizeInSeconds;
             })();
+        }
+
+        public function maxQueryDepth(): int
+        {
+            return $this->maxQueryDepth;
         }
 
         public function allowedOrigins(): array

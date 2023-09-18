@@ -6,8 +6,9 @@ namespace App\Server\RequestDispatcher;
 
 use Comet\Request;
 use Comet\Response;
+use GraphQL\Error\DebugFlag;
 
-use function App\WatchtowerConfig;
+use function App\AppConfig;
 
 function GraphQLController(): Controller
 {
@@ -43,7 +44,9 @@ function GraphQLController(): Controller
                             validationRules: null
                         )
                         ->toArray(
-                            debug: WatchtowerConfig()->debugFlag()
+                            debug: (AppConfig()->environment() === 'development')
+                                ? DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::INCLUDE_TRACE
+                                : DebugFlag::NONE
                         )
                     )
                 ) 

@@ -9,10 +9,10 @@ namespace
     use GraphQL\Validator\Rules\QueryDepth;
     use Laravel\SerializableClosure\SerializableClosure;
 
+    use function App\AccessControlConfig;
     use function App\AppConfig;
     use function App\Console;
     use function App\Server;
-    use function App\WatchtowerConfig;
 
     interface App
     {
@@ -28,19 +28,19 @@ namespace
         $app ??= new class() implements App {
             public function __construct()
             {
-                if (WatchtowerConfig()->enableSecurityRules()) {
+                if (AppConfig()->environment() === 'production') {
                     DocumentValidator::addRule(
                         rule: new QueryDepth(
-                            maxQueryDepth: 3
+                            maxQueryDepth: AccessControlConfig()->maxQueryDepth()
                         )
                     );
                 
                     DocumentValidator::addRule(
                         rule: new DisableIntrospection()
                     );
+                    
+                    SerializableClosure::setSecretKey(AppConfig()->serializationKey());
                 }
-
-                SerializableClosure::setSecretKey(AppConfig()->serializationKey());
             }
 
             public function runConsole(): void
