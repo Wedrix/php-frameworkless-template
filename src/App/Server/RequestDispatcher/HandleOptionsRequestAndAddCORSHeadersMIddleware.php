@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use Comet\Request;
 use Comet\Response;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -21,11 +22,15 @@ function HandleOptionsRequestAndAddCORSHeadersMIddleware(): Middleware
             RequestHandlerInterface $handler
         ): ResponseInterface
         {
+            if (!$request instanceof Request) {
+                throw new \Exception('Invalid request. Must be an instance of \\Comet\\Request.');
+            }
+
             $response = ($request->getMethod() === 'OPTIONS') 
                                 ? new Response()
                                 : $handler->handle($request);
     
-            $origin = $request->getHeader('Origin');
+            $origin = requestOrigin($request);
     
             $allowedOrigins = AccessControlConfig()->allowedOrigins();
     

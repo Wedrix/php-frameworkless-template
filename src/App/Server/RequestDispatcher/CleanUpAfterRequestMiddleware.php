@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use Comet\Request;
 use Psr\Http\Message\ResponseInterface as MessageResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -20,6 +21,10 @@ function CleanUpAfterRequestMiddleware(): Middleware
             RequestHandlerInterface $handler
         ): MessageResponseInterface
         {
+            if (!$request instanceof Request) {
+                throw new \Exception('Invalid request. Must be an instance of \\Comet\\Request.');
+            }
+
             $response = $handler->handle($request);
 
             DataMapper()->clear();

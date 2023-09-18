@@ -434,17 +434,18 @@ namespace App\Server\RequestDispatcher
             ));
     }
 
+    function requestOrigin(
+        Request $request
+    ): string
+    {
+        return $request->getHeader('Origin')[0] 
+            ?? throw new \Exception('The origin is not set for this request.');
+    }
+
     function requestUserContext(
         Request $request
     ): ?string
     {
         return $request->getCookieParams()['user_context'] ?? null;
-    }
-
-    function requestOrigin(
-        Request $request
-    ): ?string
-    {
-        return $request->getHeader('Origin')[0] ?? null;
     }
 }

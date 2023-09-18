@@ -40,11 +40,10 @@ function AssociateUserWithRequestMiddleware(): Middleware
                 : RefreshToken::{
                     \explode('Bearer ', $reauthorizationHeader)[1] ?? throw new \Exception('Invalid \'Reauthorization\' header!')
                 }();
-            $requestOrigin = requestOrigin($request);
             $userContext = requestUserContext($request);
 
             if (
-                !\is_null($accessToken) && !\is_null($requestOrigin) && !\is_null($userContext)
+                !\is_null($accessToken) && !\is_null($userContext)
             ) {
                 if (!accessTokenAuthenticatesRequest($accessToken, $request)) {
                     throw new \Exception('The request could not be authenticated!');
