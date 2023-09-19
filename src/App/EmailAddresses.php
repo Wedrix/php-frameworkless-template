@@ -39,7 +39,7 @@ final class EmailAddresses
         $emailAddressesParts = \explode(',',$value);
 
         $elements = \array_map(
-            static fn(string $emailAddressPart): EmailAddress => EmailAddress::{$emailAddressPart}(),
+            static fn(string $emailAddressPart) => EmailAddress::{$emailAddressPart}(),
             $emailAddressesParts
         );
 

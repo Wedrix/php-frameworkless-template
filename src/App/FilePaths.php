@@ -39,7 +39,7 @@ final class FilePaths
         $filePathsParts = \explode(',',$value);
 
         $elements = \array_map(
-            static fn(string $filePathPart): FilePath => FilePath::{$filePathPart}(),
+            static fn(string $filePathPart) => FilePath::{$filePathPart}(),
             $filePathsParts
         );
 
