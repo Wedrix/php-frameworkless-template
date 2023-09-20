@@ -455,10 +455,17 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): ?AccessToken
     {
-        return \is_null(requestAuthorizationHeader($request))
+        $requestAuthorizationHeader = requestAuthorizationHeader($request);
+
+        assert(
+            \is_null($requestAuthorizationHeader) || !empty($requestAuthorizationHeader), 
+            new \Exception('Invalid \'Authorization\' header!')
+        );
+
+        return \is_null($requestAuthorizationHeader)
                 ? null
                 : AccessToken::{
-                    \explode('Bearer ', requestAuthorizationHeader($request) ?? throw new \Exception('Invalid \'Authorization\' header!'))[1] 
+                    \explode('Bearer ', $requestAuthorizationHeader)[1] 
                         ?? throw new \Exception('Invalid \'Authorization\' header!')
                 }();
     }
@@ -467,10 +474,17 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): ?RefreshToken
     {
-        return \is_null(requestReauthorizationHeader($request))
+        $requestReauthorizationHeader = requestReauthorizationHeader($request);
+
+        assert(
+            \is_null($requestReauthorizationHeader) || !empty($requestReauthorizationHeader), 
+            new \Exception('Invalid \'Reauthorization\' header!')
+        );
+
+        return \is_null($requestReauthorizationHeader)
                 ? null
                 : RefreshToken::{
-                    \explode('Bearer ', requestReauthorizationHeader($request) ?? throw new \Exception('Invalid \'Reauthorization\' header!'))[1] 
+                    \explode('Bearer ', $requestReauthorizationHeader)[1] 
                         ?? throw new \Exception('Invalid \'Reauthorization\' header!')
                 }();
     }
