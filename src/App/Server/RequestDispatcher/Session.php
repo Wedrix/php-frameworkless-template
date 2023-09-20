@@ -61,10 +61,6 @@ function Session(
             $user = UserOfSession(session: $this);
 
             $request = RequestOfUser($user);
-    
-            $requestOrigin = requestOrigin($request);
-    
-            $userContext = \bin2hex(\random_bytes(16));
 
             if (\is_null($this->refreshToken)) {
                 throw new \Exception('The Refresh Token is not set!');
@@ -78,14 +74,14 @@ function Session(
                 JWT::encode(
                     payload: [
                         'iss' => AppConfig()->domain(),
-                        'aud' => $requestOrigin,
+                        'aud' => $requestOrigin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'),
                         'iat' => $time->getTimestamp(),
                         'exp' => $time->modify('+'. AuthConfig()->accessTokenTTLInMinutes().' minutes')->getTimestamp(),
                         'sub' => (string) $user->id(),
                         'role' => $user->role(),
                         'fingerprint' => \hash_hmac(
                             algo: AuthConfig()->fingerprintHashAlgorithm(),
-                            data: $userContext,
+                            data: $userContext = \bin2hex(\random_bytes(16)),
                             key: CipherText::decrypt($user->authorizationKey())
                         )
                     ],
@@ -115,7 +111,7 @@ function Session(
             }();
     
             $this->contextCookie = ContextCookie::{
-                (function() use($userContext): string {
+                (static function() use($userContext): string {
                     $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
             
                     $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";

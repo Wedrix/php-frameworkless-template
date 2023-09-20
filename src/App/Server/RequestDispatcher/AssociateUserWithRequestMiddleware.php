@@ -27,19 +27,8 @@ function AssociateUserWithRequestMiddleware(): Middleware
                 throw new \Exception('Invalid request. Must be an instance of \\Comet\\Request.');
             }
 
-            $authorizationHeader = $request->getHeader('Authorization')[0] ?? null;
-            $reauthorizationHeader = $request->getHeader('Reauthorization')[0] ?? null;
-
-            $accessToken = \is_null($authorizationHeader)
-                ? null
-                : AccessToken::{
-                    \explode('Bearer ', $authorizationHeader)[1] ?? throw new \Exception('Invalid \'Authorization\' header!')
-                }();
-            $refreshToken = \is_null($reauthorizationHeader)
-                ? null
-                : RefreshToken::{
-                    \explode('Bearer ', $reauthorizationHeader)[1] ?? throw new \Exception('Invalid \'Reauthorization\' header!')
-                }();
+            $accessToken = requestAccessToken($request);
+            $refreshToken = requestRefreshToken($request);
             $userContext = requestUserContext($request);
 
             if (
@@ -61,7 +50,7 @@ function AssociateUserWithRequestMiddleware(): Middleware
                 $session = Session(
                     accessToken: $accessToken,
                     contextCookie: ContextCookie::{
-                        (function() use($userContext): string {
+                        (static function() use($userContext): string {
                             $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
                     
                             $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";

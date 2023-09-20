@@ -33,7 +33,7 @@ function AddIPAddressToRequestMiddleware(): Middleware
                         checkProxyHeaders: IPAddressParserConfig()->checkProxyHeaders(),
                         headersToInspect: IPAddressParserConfig()->headersToInspect(),
                         trustedProxies: IPAddressParserConfig()->trustedProxies()
-                    )
+                    ) ?? throw new \Exception('The IP Address is not set for this request.')
                 )
             );
         }

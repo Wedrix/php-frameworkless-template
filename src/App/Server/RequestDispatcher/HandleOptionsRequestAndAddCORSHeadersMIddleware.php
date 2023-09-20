@@ -30,7 +30,7 @@ function HandleOptionsRequestAndAddCORSHeadersMIddleware(): Middleware
                                 ? new Response()
                                 : $handler->handle($request);
     
-            $origin = requestOrigin($request);
+            $origin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.');
     
             $allowedOrigins = AccessControlConfig()->allowedOrigins();
     

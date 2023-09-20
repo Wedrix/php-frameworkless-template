@@ -180,6 +180,68 @@ namespace App\Server\RequestDispatcher
         return AccessToken::exp($session->accessToken()) <= $time->getTimestamp();
     }
 
+    function passwordAuthenticatesUser(
+        Password $password,
+        User $user
+    ): bool
+    {
+        return Hash::verify((string) $password, $user->password());
+    }
+
+    function accessTokenAuthenticatesRequest(
+        AccessToken $accessToken,
+        Request $request
+    ): bool
+    {
+        $time = \date_create_immutable('now');
+
+        $user = UserWithIdAndRole(
+            id: Id::{AccessToken::sub($accessToken)}(),
+            role: AccessToken::role($accessToken)
+        );
+
+        return
+            (AccessToken::iss($accessToken) === AppConfig()->domain()) &&
+            (AccessToken::aud($accessToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
+            (\in_array(AccessToken::aud($accessToken), AccessControlConfig()->allowedOrigins())) &&
+            (AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
+            (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (AccessToken::sub($accessToken) === (string) $user->id()) &&
+            (AccessToken::role($accessToken) === $user->role()) &&
+            (AccessToken::fingerprint($accessToken) === \hash_hmac(
+                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
+                key: (string) $user->authorizationKey()
+            ));
+    }
+
+    function refreshTokenAuthenticatesRequest(
+        RefreshToken $refreshToken,
+        Request $request
+    ): bool
+    {
+        $time = \date_create_immutable('now');
+
+        $user = UserWithIdAndRole(
+            id: Id::{RefreshToken::sub($refreshToken)}(),
+            role: RefreshToken::role($refreshToken)
+        );
+
+        return 
+            (RefreshToken::iss($refreshToken) === AppConfig()->domain()) &&
+            (RefreshToken::aud($refreshToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
+            (\in_array(RefreshToken::aud($refreshToken), AccessControlConfig()->allowedOrigins())) &&
+            (RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
+            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
+            (RefreshToken::role($refreshToken) === $user->role()) &&
+            (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
+                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
+                key: (string) $user->authorizationKey()
+            ));
+    }
+
     /**
      * Get the client's IP address as determined from the proxy header (X-Forwarded-For or from $request->connection->_remoteAddress
      * @see https://github.com/akrabat/ip-address-middleware/blob/main/src/IpAddress.php
@@ -189,12 +251,13 @@ namespace App\Server\RequestDispatcher
      * @param array<string> $headersToInspect List of proxy headers inspected for the client IP address
      * @param array<string> $trustedProxies List of trusted proxy addresses (accepts wildcards and CIDR notation)
      */
+    // TODO: Verify the implementation. It was adapted without much understanding.
     function requestIPAddress(
         Request $request,
         bool $checkProxyHeaders,
         array $headersToInspect,
         array $trustedProxies
-    ): IPAddress
+    ): ?IPAddress
     {
         if ($checkProxyHeaders && empty($trustedProxies)) {
             throw new \Exception('Use of the forward headers requires an array for trusted proxies.');
@@ -369,77 +432,16 @@ namespace App\Server\RequestDispatcher
             }
         }
 
-        return IPAddress::{$ipAddress}();
-
-        // TODO: Verify the above implementation. It was adapted without much understanding.
-    }
-
-    function passwordAuthenticatesUser(
-        Password $password,
-        User $user
-    ): bool
-    {
-        return Hash::verify((string) $password, $user->password());
-    }
-
-    function accessTokenAuthenticatesRequest(
-        AccessToken $accessToken,
-        Request $request
-    ): bool
-    {
-        $time = \date_create_immutable('now');
-
-        $user = UserWithIdAndRole(
-            id: Id::{AccessToken::sub($accessToken)}(),
-            role: AccessToken::role($accessToken)
-        );
-
-        return (AccessToken::iss($accessToken) === AppConfig()->domain()) &&
-            (AccessToken::aud($accessToken) === requestOrigin($request)) &&
-            (\in_array(AccessToken::aud($accessToken), AccessControlConfig()->allowedOrigins())) &&
-            (AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
-            (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
-            (AccessToken::sub($accessToken) === (string) $user->id()) &&
-            (AccessToken::role($accessToken) === $user->role()) &&
-            (AccessToken::fingerprint($accessToken) === \hash_hmac(
-                algo: AuthConfig()->fingerprintHashAlgorithm(),
-                data: requestUserContext($request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: (string) $user->authorizationKey()
-            ));
-    }
-
-    function refreshTokenAuthenticatesRequest(
-        RefreshToken $refreshToken,
-        Request $request
-    ): bool
-    {
-        $time = \date_create_immutable('now');
-
-        $user = UserWithIdAndRole(
-            id: Id::{RefreshToken::sub($refreshToken)}(),
-            role: RefreshToken::role($refreshToken)
-        );
-
-        return (RefreshToken::iss($refreshToken) === AppConfig()->domain()) &&
-            (RefreshToken::aud($refreshToken) === requestOrigin($request)) &&
-            (\in_array(RefreshToken::aud($refreshToken), AccessControlConfig()->allowedOrigins())) &&
-            (RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
-            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
-            (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
-            (RefreshToken::role($refreshToken) === $user->role()) &&
-            (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
-                algo: AuthConfig()->fingerprintHashAlgorithm(),
-                data: requestUserContext($request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: (string) $user->authorizationKey()
-            ));
+        return empty($ipAddress)
+            ? null
+            : IPAddress::{$ipAddress}();
     }
 
     function requestOrigin(
         Request $request
-    ): string
+    ): ?string
     {
-        return $request->getHeader('Origin')[0] 
-            ?? throw new \Exception('The origin is not set for this request.');
+        return $request->getHeader('Origin')[0] ?? null;
     }
 
     function requestUserContext(
@@ -447,5 +449,43 @@ namespace App\Server\RequestDispatcher
     ): ?string
     {
         return $request->getCookieParams()['user_context'] ?? null;
+    }
+
+    function requestAccessToken(
+        Request $request
+    ): ?AccessToken
+    {
+        return \is_null(requestAuthorizationHeader($request))
+                ? null
+                : AccessToken::{
+                    \explode('Bearer ', requestAuthorizationHeader($request) ?? throw new \Exception('Invalid \'Authorization\' header!'))[1] 
+                        ?? throw new \Exception('Invalid \'Authorization\' header!')
+                }();
+    }
+
+    function requestRefreshToken(
+        Request $request
+    ): ?RefreshToken
+    {
+        return \is_null(requestReauthorizationHeader($request))
+                ? null
+                : RefreshToken::{
+                    \explode('Bearer ', requestReauthorizationHeader($request) ?? throw new \Exception('Invalid \'Reauthorization\' header!'))[1] 
+                        ?? throw new \Exception('Invalid \'Reauthorization\' header!')
+                }();
+    }
+
+    function requestAuthorizationHeader(
+        Request $request
+    ): ?string
+    {
+        return $request->getHeader('Authorization')[0] ?? null;
+    }
+
+    function requestReauthorizationHeader(
+        Request $request
+    ): ?string
+    {
+        return $request->getHeader('Reauthorization')[0] ?? null;
     }
 }

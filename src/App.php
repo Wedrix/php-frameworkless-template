@@ -28,7 +28,7 @@ namespace
         $app ??= new class() implements App {
             public function __construct()
             {
-                if (AppConfig()->environment() === 'production') {
+                if (AppConfig()->environment() !== 'development') {
                     DocumentValidator::addRule(
                         rule: new QueryDepth(
                             maxQueryDepth: AccessControlConfig()->maxQueryDepth()
