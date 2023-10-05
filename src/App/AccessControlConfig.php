@@ -35,6 +35,11 @@ interface AccessControlConfig
     public function apiAccessLimit(): int;
 
     public function apiAccessWindowSizeInSeconds(): int;
+
+    /**
+     * @return int<1,max>
+     */
+    public function userContextKeyLength(): int;
 }
 
 function AccessControlConfig(): AccessControlConfig
@@ -76,6 +81,8 @@ function AccessControlConfig(): AccessControlConfig
         private readonly int $apiAccessLimit;
     
         private readonly int $apiAccessWindowSizeInSeconds;
+
+        private readonly int $userContextKeyLength;
 
         public function __construct()
         {
@@ -152,6 +159,18 @@ function AccessControlConfig(): AccessControlConfig
         
                 return (int) $apiAccessWindowSizeInSeconds;
             })();
+
+            $this->userContextKeyLength = (function (): int {
+                $apiAccessLimit = $this->configValues['ACCESS_CONTROL_USER_CONTEXT_KEY_LENGTH'] ?? throw new \Exception(
+                    message: 'The Access Control user context key length is not set. Try adding \'ACCESS_CONTROL_USER_CONTEXT_KEY_LENGTH\' to the .env file.'
+                );
+        
+                if(!\ctype_digit($apiAccessLimit)) {
+                    throw new \Exception('The Access Control user context key length is invalid. Try seting a correct int value.');
+                }
+        
+                return (int) $apiAccessLimit;
+            })();
         }
 
         public function maxQueryDepth(): int
@@ -192,6 +211,13 @@ function AccessControlConfig(): AccessControlConfig
         public function apiAccessWindowSizeInSeconds(): int
         {
             return $this->apiAccessWindowSizeInSeconds;
+        }
+
+        public function userContextKeyLength(): int
+        {
+            assert($this->userContextKeyLength > 0, throw new \Exception('Invalid user context key length'));
+
+            return $this->userContextKeyLength;
         }
     };
 

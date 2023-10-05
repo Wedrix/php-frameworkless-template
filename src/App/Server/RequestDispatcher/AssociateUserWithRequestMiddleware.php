@@ -34,11 +34,11 @@ function AssociateUserWithRequestMiddleware(): Middleware
             if (
                 !\is_null($accessToken) && !\is_null($userContext)
             ) {
-                if (!accessTokenAuthenticatesRequest($accessToken, $request)) {
+                if (!accessTokenAuthenticatesRequest(accessToken: $accessToken, request: $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
 
-                if (!\is_null($refreshToken) && !refreshTokenAuthenticatesRequest($refreshToken, $request)) {
+                if (!\is_null($refreshToken) && !refreshTokenAuthenticatesRequest(refreshToken: $refreshToken, request: $request)) {
                     throw new \Exception('The request could not be authenticated!');
                 }
                 
@@ -62,12 +62,8 @@ function AssociateUserWithRequestMiddleware(): Middleware
                             return $cookie;
                         })()
                     }(),
-                    refreshToken: $refreshToken,
+                    refreshToken: $refreshToken
                 );
-
-                if (sessionIsExpired(session: $session)) {
-                    throw new \Exception('The session is expired!');
-                }
             
                 SessionOfUser::associate(
                     session: $session,

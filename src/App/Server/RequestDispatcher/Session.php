@@ -7,6 +7,7 @@ namespace App\Server\RequestDispatcher;
 use App\CipherText;
 use Firebase\JWT\JWT;
 
+use function App\AccessControlConfig;
 use function App\AppConfig;
 use function App\AuthConfig;
 
@@ -81,7 +82,7 @@ function Session(
                         'role' => $user->role(),
                         'fingerprint' => \hash_hmac(
                             algo: AuthConfig()->fingerprintHashAlgorithm(),
-                            data: $userContext = \bin2hex(\random_bytes(16)),
+                            data: $userContext = \bin2hex(\random_bytes(AccessControlConfig()->userContextKeyLength())),
                             key: CipherText::decrypt($user->authorizationKey())
                         )
                     ],

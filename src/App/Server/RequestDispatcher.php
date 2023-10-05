@@ -53,6 +53,7 @@ namespace App\Server\RequestDispatcher
     use function App\AccessControlConfig;
     use function App\AppConfig;
     use function App\AuthConfig;
+    use function App\Encrypter;
 
     /**
      * @var \WeakMap<Request,User> $requests_users
@@ -141,6 +142,14 @@ namespace App\Server\RequestDispatcher
         return ($users_requests[$user] ?? null) !== $request;
     }
 
+    function sessionIsOfUser(
+        Session $session,
+        User $user
+    ): bool
+    {
+        return !sessionIsNotOfUser(session: $session, user: $user);
+    }
+
     function sessionIsNotOfUser(
         Session $session,
         User $user
@@ -211,7 +220,9 @@ namespace App\Server\RequestDispatcher
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: (string) $user->authorizationKey()
+                key: \is_string($authorizationKey = Encrypter()->decrypt((string) $user->authorizationKey())) 
+                        ? $authorizationKey 
+                        : throw new \Exception('Error decrypting the authorization key.')
             ));
     }
 
@@ -238,7 +249,9 @@ namespace App\Server\RequestDispatcher
             (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: (string) $user->authorizationKey()
+                key: \is_string($authorizationKey = Encrypter()->decrypt((string) $user->authorizationKey())) 
+                        ? $authorizationKey 
+                        : throw new \Exception('Error decrypting the authorization key.')
             ));
     }
 

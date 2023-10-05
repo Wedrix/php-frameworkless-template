@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Server\RequestDispatcher;
 
+use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
@@ -52,13 +53,18 @@ final class RefreshToken
             throw new \Exception('Invalid RefreshToken! The value cannot be empty.');
         }
 
-        $payload = (array) JWT::decode(
-            $value,
-            new Key(
-                AuthConfig()->signingKey(),
-                AuthConfig()->signingAlgorithm()
-            )
-        );
+        try {
+            $payload = (array) JWT::decode(
+                $value,
+                new Key(
+                    AuthConfig()->signingKey(),
+                    AuthConfig()->signingAlgorithm()
+                )
+            );
+        }
+        catch (ExpiredException $e) {
+            $payload = (array) $e->getPayload();
+        }
 
         $iss = $payload['iss'] ?? throw new \Exception('Invalid RefreshToken!');
         $aud = $payload['aud'] ?? throw new \Exception('Invalid RefreshToken!');

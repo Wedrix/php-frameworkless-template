@@ -19,6 +19,11 @@ interface AuthConfig
     public function encryptionKey(): string;
 
     public function fingerprintHashAlgorithm(): string;
+
+    /**
+     * @return int<1,max>
+     */
+    public function authorizationKeyLength(): int;
 }
 
 function AuthConfig(): AuthConfig
@@ -44,6 +49,8 @@ function AuthConfig(): AuthConfig
         private readonly string $encryptionKey;
 
         private readonly string $fingerprintHashAlgorithm;
+
+        private readonly int $authorizationKeyLength;
 
         public function __construct()
         {
@@ -90,6 +97,18 @@ function AuthConfig(): AuthConfig
             $this->fingerprintHashAlgorithm = $this->configValues['AUTH_FINGERPRINT_HASH_ALGORITHM'] ?? throw new \Exception(
                 message: 'The Auth fingerprint hash algorithm is not set. Try adding \'AUTH_FINGERPRINT_HASH_ALGORITHM\' to the .env file.'
             );
+
+            $this->authorizationKeyLength = (function (): int {
+                $ttl = $this->configValues['AUTH_KEY_LENGTH'] ?? throw new \Exception(
+                    message: 'The Auth key length is not set. Try adding \'AUTH_KEY_LENGTH\' to the .env file.'
+                );
+        
+                if(!\ctype_digit($ttl)) {
+                    throw new \Exception('The Auth key length is invalid. Try seting a correct int value.');
+                }
+        
+                return (int) $ttl;
+            })();
         }
     
         public function signingKey(): string
@@ -120,6 +139,13 @@ function AuthConfig(): AuthConfig
         public function fingerprintHashAlgorithm(): string
         {
             return $this->fingerprintHashAlgorithm;
+        }
+
+        public function authorizationKeyLength(): int
+        {
+            assert($this->authorizationKeyLength > 0, throw new \Exception('Invalid authorization key length'));
+
+            return $this->authorizationKeyLength;
         }
     };
 
