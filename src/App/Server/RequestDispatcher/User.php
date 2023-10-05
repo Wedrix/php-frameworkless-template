@@ -24,7 +24,7 @@ interface User
 
     public function password(): Hash;
 
-    public function createSession(
+    public function startSession(
         Request $request
     ): void;
 
@@ -74,7 +74,7 @@ function User(
             return $this->password;
         }
 
-        public function createSession(
+        public function startSession(
             Request $request
         ): void
         {
