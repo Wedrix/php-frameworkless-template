@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Server\RequestDispatcher;
+namespace App\Server\RequestHandler;
 
-use Comet\Request;
+use App\Server\Request;
 
 function UserOfRequest(
     Request $request

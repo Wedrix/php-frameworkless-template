@@ -4,55 +4,184 @@ declare(strict_types=1);
 
 namespace App\Server
 {
-    use Comet\Factory\CometPsr17Factory;
-    use Slim\App as RequestDispatcher;
-    use Slim\Factory\AppFactory;
-    use Slim\Factory\Psr17\Psr17FactoryProvider;
-    
-    use function App\AppConfig;
-    use function App\Server\RequestDispatcher\AddIPAddressToRequestMiddleware;
-    use function App\Server\RequestDispatcher\AssociateUserWithRequestMiddleware;
-    use function App\Server\RequestDispatcher\CheckIfRequestIsPermittedMiddleware;
-    use function App\Server\RequestDispatcher\CleanUpAfterRequestMiddleware;
-    use function App\Server\RequestDispatcher\GraphQLController;
-    use function App\Server\RequestDispatcher\HandleOptionsRequestAndAddCORSHeadersMIddleware;
-    
-    function RequestDispatcher(): RequestDispatcher
-    {
-        static $requestDispatcher;
-        
-        $requestDispatcher ??= (static function (): RequestDispatcher {
-            Psr17FactoryProvider::setFactories([CometPsr17Factory::class]);
-            AppFactory::setPsr17FactoryProvider(new Psr17FactoryProvider());
-    
-            $requestDispatcher = AppFactory::create();
-    
-            // See https://www.slimframework.com/docs/v4/concepts/middleware.html for the middleware execution order
-            $requestDispatcher->add(AssociateUserWithRequestMiddleware());
-            $requestDispatcher->add(CheckIfRequestIsPermittedMiddleware());
-            $requestDispatcher->add(AddIPAddressToRequestMiddleware());
-            $requestDispatcher->add(CleanUpAfterRequestMiddleware());
-            $requestDispatcher->add(HandleOptionsRequestAndAddCORSHeadersMIddleware());
-    
-            $requestDispatcher->post(AppConfig()->endpoint(), GraphQLController());
-    
-            return $requestDispatcher;
-        })();
-    
-        return $requestDispatcher;
-    }
-}
 
-namespace App\Server\RequestDispatcher
-{
-    use App\Hash;
     use App\Id;
-    use App\Password;
-    use Comet\Request;
+    use App\Server\RequestHandler\AccessToken;
+    use App\Server\RequestHandler\ContextCookie;
+    use App\Server\RequestHandler\SessionOfUser;
+    use App\Server\RequestHandler\UserOfRequest;
+    use GraphQL\Error\DebugFlag;
 
     use function App\AccessControlConfig;
     use function App\AppConfig;
     use function App\AuthConfig;
+    use function App\DataMapper;
+    use function App\IPAddressParserConfig;
+    use function App\Server\RequestHandler\accessTokenAuthenticatesRequest;
+    use function App\Server\RequestHandler\ipAddressAPIRateLimitExceeded;
+    use function App\Server\RequestHandler\refreshTokenAuthenticatesRequest;
+    use function App\Server\RequestHandler\requestAccessToken;
+    use function App\Server\RequestHandler\requestIPAddress;
+    use function App\Server\RequestHandler\requestOrigin;
+    use function App\Server\RequestHandler\requestRefreshToken;
+    use function App\Server\RequestHandler\requestUserContext;
+    use function App\Server\RequestHandler\Session;
+    use function App\Server\RequestHandler\UserWithIdAndRole;
+    use function App\Server\RequestHandler\WatchtowerExecutor;
+
+    interface RequestHandler
+    {
+        public function handle(
+            Request $request,
+            Response $response
+        ): void;
+    }
+    
+    function RequestHandler(): RequestHandler
+    {
+        static $RequestHandler;
+
+        $RequestHandler ??= new class() implements RequestHandler {
+            public function handle(
+                Request $request,
+                Response $response
+            ): void
+            {
+                // Set Request IPAddress
+                $request->setAttribute(
+                    attribute: IPAddressParserConfig()->attributeName(),
+                    value: requestIPAddress(
+                        request: $request,
+                        checkProxyHeaders: IPAddressParserConfig()->checkProxyHeaders(),
+                        headersToInspect: IPAddressParserConfig()->headersToInspect(),
+                        trustedProxies: IPAddressParserConfig()->trustedProxies()
+                    ) ?? throw new \Exception('Error resolving the IP Address for this request.')
+                );
+
+                // Check Rate Limiting
+                if (ipAddressAPIRateLimitExceeded(ipAddress: $request->attribute(IPAddressParserConfig()->attributeName()))) {
+                    throw new \Exception('Rate limit exceeded.');
+                }
+
+                // Attach CORS Headers
+                {
+                    $origin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.');
+        
+                    $allowedOrigins = AccessControlConfig()->allowedOrigins();
+                    
+                    $response->setHeader('Access-Control-Allow-Origin', \in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[0]);
+                    $response->setHeader('Vary', 'Origin');
+                    $response->setHeader('Access-Control-Allow-Headers', AccessControlConfig()->allowedHeaders());
+                    $response->setHeader('Access-Control-Allow-Methods', AccessControlConfig()->allowedMethods());
+                    $response->setHeader('Access-Control-Expose-Headers', AccessControlConfig()->exposeHeaders());
+        
+                    if (AccessControlConfig()->allowCredentials()) {
+                        $response->setHeader('Access-Control-Allow-Credentials', 'true');
+                    }
+         
+                    $response->setHeader('Content-Type', $request->header('Accept')[0] ?? '*/*');
+
+                    if ($request->method() === 'OPTIONS') {
+                        return;
+                    }
+                }
+
+                // Restore Request Session
+                if (
+                    !\is_null($accessToken = requestAccessToken($request)) && !\is_null($userContext = requestUserContext($request))
+                ) {
+                    if (!accessTokenAuthenticatesRequest(accessToken: $accessToken, request: $request)) {
+                        throw new \Exception('The request could not be authenticated!');
+                    }
+    
+                    if (!\is_null($refreshToken = requestRefreshToken($request)) && !refreshTokenAuthenticatesRequest(refreshToken: $refreshToken, request: $request)) {
+                        throw new \Exception('The request could not be authenticated!');
+                    }
+    
+                    $user = UserWithIdAndRole(
+                        id: Id::{AccessToken::sub($accessToken)}(),
+                        role: AccessToken::role($accessToken)
+                    );
+    
+                    $session = Session(
+                        accessToken: $accessToken,
+                        contextCookie: ContextCookie::{
+                            (static function() use($userContext): string {
+                                $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+                        
+                                $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
+                        
+                                if (AppConfig()->environment() !== 'development') {
+                                    $cookie .= '; Secure';
+                                }
+                        
+                                return $cookie;
+                            })()
+                        }(),
+                        refreshToken: $refreshToken
+                    );
+                
+                    SessionOfUser::associate(
+                        session: $session,
+                        user: $user
+                    );
+    
+                    UserOfRequest::associate($user, $request);
+                }
+                
+                // Handle GraphQL Request
+                if ($request->uri()->path() === AppConfig()->endpoint()) {
+                    $input = (array) $request->parsedBody();
+    
+                    $response->body()
+                            ->write(
+                                \is_string(
+                                    $graphQLResult = \json_encode(
+                                        WatchtowerExecutor()->executeQuery(
+                                            source: $input['query'] ?? throw new \Exception('Empty query.'),
+                                            rootValue: [],
+                                            contextValue: [
+                                                'request' => $request,
+                                                'response' => $response
+                                            ],
+                                            variableValues: $input['variables'] ?? null,
+                                            operationName: $input['operationName'] ?? null,
+                                            validationRules: null
+                                        )
+                                        ->toArray(
+                                            debug: (AppConfig()->environment() === 'development')
+                                                ? DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::INCLUDE_TRACE
+                                                : DebugFlag::NONE
+                                        )
+                                    )
+                                ) 
+                                ? $graphQLResult
+                                : throw new \Exception('Error evaluating GraphQL result.')
+                            );
+                    
+                    $response->setHeader('Content-Type', 'application/json; charset=utf-8');
+                }
+
+                // Clear State
+                DataMapper()->clear();
+            }
+        };
+    
+        return $RequestHandler;
+    }
+}
+
+namespace App\Server\RequestHandler
+{
+    use App\Hash;
+    use App\Id;
+    use App\Password;
+    use App\Server\Request;
+
+    use function App\AccessControlConfig;
+    use function App\AppConfig;
+    use function App\AuthConfig;
+    use function App\Cache;
     use function App\Encrypter;
 
     /**
@@ -420,7 +549,7 @@ namespace App\Server\RequestDispatcher
                 foreach ($headersToInspect as $header) {
                     if ($request->hasHeader($header)) {
                         $ip = (static function () use($request, $header): string {
-                            $items = \explode(',', $request->getHeaderLine($header));
+                            $items = \explode(',', $request->headerLine($header));
                             $headerValue = \trim(\reset($items));
                     
                             if (\ucfirst($header) == 'Forwarded') {
@@ -454,14 +583,14 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): ?string
     {
-        return $request->getHeader('Origin')[0] ?? null;
+        return $request->header('Origin')[0] ?? null;
     }
 
     function requestUserContext(
         Request $request
     ): ?string
     {
-        return $request->getCookieParams()['user_context'] ?? null;
+        return $request->cookieParams()['user_context'] ?? null;
     }
 
     function requestAccessToken(
@@ -506,13 +635,57 @@ namespace App\Server\RequestDispatcher
         Request $request
     ): ?string
     {
-        return $request->getHeader('Authorization')[0] ?? null;
+        return $request->header('Authorization')[0] ?? null;
     }
 
     function requestReauthorizationHeader(
         Request $request
     ): ?string
     {
-        return $request->getHeader('Reauthorization')[0] ?? null;
+        return $request->header('Reauthorization')[0] ?? null;
+    }
+
+    /**
+     * Uses the Sliding Window algorithm
+     */
+    function ipAddressAPIRateLimitExceeded(
+        IPAddress $ipAddress
+    ): bool
+    {
+        $time = \date_create_immutable('now');
+
+        // Fetch user accesses
+        $cacheItem = Cache()->getItem(key: 'api_access_'.$ipAddress);
+
+        $userAccesses = $cacheItem->isHit() 
+                                ? $cacheItem->get() 
+                                : [];
+
+        // Add current timestamp as new user access
+        $userAccesses[] = WindowAccess(
+            timestamp: $time->getTimestamp()
+        );
+
+        // Filter user accesses where timestamps < current timestamp - access window size in seconds
+        $userAccesses = \array_filter(
+            $userAccesses,
+            fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - AccessControlConfig()->apiAccessWindowSizeInSeconds())
+        );
+
+        // Save filtered user accesses
+        Cache()->save(
+            $cacheItem->set($userAccesses)
+                    ->expiresAfter(AccessControlConfig()->apiAccessWindowSizeInSeconds())
+        );
+
+        // Count filtered user accesses
+        $accessCount = \count($userAccesses);
+
+        // Exceeded if user accesses count > limit
+        if ($accessCount > AccessControlConfig()->apiAccessLimit()) {
+            return true;
+        }
+
+        return false;
     }
 }

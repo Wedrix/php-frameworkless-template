@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Server\RequestDispatcher;
+namespace App\Server\RequestHandler;
 
 use App\CipherText;
 use App\Hash;
 use App\Id;
-use Comet\Request;
+use App\Server\Request;
 use Firebase\JWT\JWT;
 
 use function App\AccessControlConfig;

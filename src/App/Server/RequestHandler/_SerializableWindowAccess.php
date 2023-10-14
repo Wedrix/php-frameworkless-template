@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Server\RequestDispatcher;
+namespace App\Server\RequestHandler;
 
 /**
  * Needed since PHP cannot serialize Anonymous Classes (as of v8.2).

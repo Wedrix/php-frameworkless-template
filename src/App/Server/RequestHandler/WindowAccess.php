@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Server\RequestDispatcher;
+namespace App\Server\RequestHandler;
 
 interface WindowAccess
 {

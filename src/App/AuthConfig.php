@@ -143,7 +143,7 @@ function AuthConfig(): AuthConfig
 
         public function authorizationKeyLength(): int
         {
-            assert($this->authorizationKeyLength > 0, throw new \Exception('Invalid authorization key length'));
+            assert($this->authorizationKeyLength > 0, new \Exception('Invalid authorization key length'));
 
             return $this->authorizationKeyLength;
         }

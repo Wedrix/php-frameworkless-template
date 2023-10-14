@@ -215,7 +215,7 @@ function AccessControlConfig(): AccessControlConfig
 
         public function userContextKeyLength(): int
         {
-            assert($this->userContextKeyLength > 0, throw new \Exception('Invalid user context key length'));
+            assert($this->userContextKeyLength > 0, new \Exception('Invalid user context key length'));
 
             return $this->userContextKeyLength;
         }

@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App;
 
-use Comet\Request;
-use Slim\Exception\HttpNotFoundException;
+use App\Server\Request;
+use App\Server\Response;
+use Workerman\Connection\TcpConnection;
 use Workerman\Crontab\Crontab;
 use Workerman\Worker;
 use Workerman\Protocols\Http;
-use Workerman\Protocols\Http\Response;
 
 use function App\Server\ConfiguredJobs;
 use function App\Server\Logger;
 use function App\Server\ProcessTaskQueueIndefinitelyJob;
-use function App\Server\RequestDispatcher;
+use function App\Server\RequestHandler;
 
 interface Server
 {
@@ -123,30 +123,24 @@ function Server(): Server
             Http::requestClass(Request::class);
     
             // Main Loop
-            $worker->onMessage = static function($connection, Request $request) {
+            $worker->onMessage = static function(TcpConnection $connection, Request $request) {
                 try {
-                    /**
-                     * @var \Comet\Response
-                    */
-                    $response = RequestDispatcher()->handle($request);
-            
-                    $headers = $response->getHeaders();
+                    $response = new Response();
+
+                    RequestHandler()->handle(request: $request, response: $response);
                     
-                    $headers['Server'] ??= AppConfig()->name();
-                    $headers['Content-Type'] ??= 'text/html; charset=utf-8';
-            
-                    $response->withHeaders($headers);
-                    
+                    $response->setHeader('Server', AppConfig()->name());
+
                     $connection->send($response);
-    
-                } catch(HttpNotFoundException $error) {
-                    $connection->send(new Response(404));
-                } catch(\Throwable $error) {
+                } 
+                catch(\Throwable $error) {
                     if (AppConfig()->environment() === 'development') {
                         echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
                     }
+
                     Logger()->error($error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage());
-                    $connection->send(new Response(500));
+
+                    $connection->send(new Response());
                 }
             };
     
