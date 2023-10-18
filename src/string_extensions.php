@@ -44,7 +44,7 @@ function strip_tags_with_content(
     $tags = \array_unique($tags[1]);
   
     if (\count($tags) > 0) {
-        if ($invert == false) {
+        if ($invert === false) {
             return \preg_replace('@<(?!(?:'. \implode('|', $tags) .')\b)(\w+)\b.*?>.*?</\1>@si', '', $text) 
                 ?? throw new \Exception("Error parsing '$text'.");
         }
@@ -53,7 +53,7 @@ function strip_tags_with_content(
                 ?? throw new \Exception("Error parsing '$text'.");
         }
     }
-    else if($invert == false) {
+    else if($invert === false) {
       return \preg_replace('@<(\w+)\b.*?>.*?</\1>@si', '', $text) 
         ?? throw new \Exception("Error parsing '$text'.");
     }
@@ -79,7 +79,7 @@ function extract_ip_address(
 {
     $parts = \explode(':', $string);
     
-    if (\count($parts) == 2) {
+    if (\count($parts) === 2) {
         if (is_valid_ip_address($parts[0])) {
             return $parts[0];
         }

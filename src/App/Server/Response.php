@@ -274,7 +274,7 @@ final class Response
     {
         $this->statusCode = (int) $code;
 
-        if ($reasonPhrase == '' && isset(static::$phrases[$this->statusCode])) {
+        if ($reasonPhrase === '' && isset(static::$phrases[$this->statusCode])) {
             $reasonPhrase = static::$phrases[$this->statusCode];
         }
 

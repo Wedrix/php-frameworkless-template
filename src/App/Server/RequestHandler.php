@@ -552,9 +552,9 @@ namespace App\Server\RequestHandler
                             $items = \explode(',', $request->headerLine($header));
                             $headerValue = \trim(\reset($items));
                     
-                            if (\ucfirst($header) == 'Forwarded') {
+                            if (\ucfirst($header) === 'Forwarded') {
                                 foreach (\explode(';', $headerValue) as $headerPart) {
-                                    if (\strtolower(\substr($headerPart, 0, 4)) == 'for=') {
+                                    if (\strtolower(\substr($headerPart, 0, 4)) === 'for=') {
                                         $for = \explode(']', $headerPart);
                                         $headerValue = \trim(\substr(\reset($for), 4), " \t\n\r\0\x0B" . "\"[]");
                                         break;

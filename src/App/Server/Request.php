@@ -336,7 +336,7 @@ final class Request
     {
         $host = $this->uri->host();
 
-        if ($host == '') {
+        if ($host === '') {
             return;
         }
 
