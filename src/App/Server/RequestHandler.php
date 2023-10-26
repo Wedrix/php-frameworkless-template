@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Server
 {
-
     use App\Id;
     use App\Server\RequestHandler\AccessToken;
     use App\Server\RequestHandler\ContextCookie;
@@ -26,7 +25,7 @@ namespace App\Server
     use function App\Server\RequestHandler\requestRefreshToken;
     use function App\Server\RequestHandler\requestUserContext;
     use function App\Server\RequestHandler\Session;
-    use function App\Server\RequestHandler\UserWithIdAndRole;
+    use function App\Server\RequestHandler\User;
     use function App\Server\RequestHandler\WatchtowerExecutor;
 
     interface RequestHandler
@@ -86,7 +85,7 @@ namespace App\Server
                     }
                 }
 
-                // Restore Request Session
+                // Restore Request Session If User Logged In
                 if (
                     !\is_null($accessToken = requestAccessToken($request)) && !\is_null($userContext = requestUserContext($request))
                 ) {
@@ -97,36 +96,39 @@ namespace App\Server
                     if (!\is_null($refreshToken = requestRefreshToken($request)) && !refreshTokenAuthenticatesRequest(refreshToken: $refreshToken, request: $request)) {
                         throw new \Exception('The request could not be authenticated!');
                     }
-    
-                    $user = UserWithIdAndRole(
-                        id: Id::{AccessToken::sub($accessToken)}(),
-                        role: AccessToken::role($accessToken)
-                    );
-    
-                    $session = Session(
-                        accessToken: $accessToken,
-                        contextCookie: ContextCookie::{
-                            (static function() use($userContext): string {
-                                $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
-                        
-                                $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
-                        
-                                if (AppConfig()->environment() !== 'development') {
-                                    $cookie .= '; Secure';
-                                }
-                        
-                                return $cookie;
-                            })()
-                        }(),
-                        refreshToken: $refreshToken
-                    );
                 
                     SessionOfUser::associate(
-                        session: $session,
-                        user: $user
+                        session: Session(
+                            accessToken: $accessToken,
+                            contextCookie: ContextCookie::{
+                                (static function() use($userContext): string {
+                                    $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+                            
+                                    $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
+                            
+                                    if (AppConfig()->environment() !== 'development') {
+                                        $cookie .= '; Secure';
+                                    }
+                            
+                                    return $cookie;
+                                })()
+                            }(),
+                            refreshToken: $refreshToken
+                        ),
+                        user: $user = User(
+                            id: Id::{AccessToken::sub($accessToken)}(),
+                            role: AccessToken::role($accessToken)
+                        )
                     );
     
                     UserOfRequest::associate($user, $request);
+                }
+                // Else Associate Anonymous User with Request
+                else {
+                    UserOfRequest::associate(
+                        user: User(id: null, role: null),
+                        request: $request
+                    );
                 }
                 
                 // Handle GraphQL Request
@@ -323,7 +325,7 @@ namespace App\Server\RequestHandler
         User $user
     ): bool
     {
-        return Hash::verify((string) $password, $user->password());
+        return Hash::verify((string) $password, AccountOfUser(user: $user)->password());
     }
 
     function accessTokenAuthenticatesRequest(
@@ -333,7 +335,7 @@ namespace App\Server\RequestHandler
     {
         $time = \date_create_immutable('now');
 
-        $user = UserWithIdAndRole(
+        $user = User(
             id: Id::{AccessToken::sub($accessToken)}(),
             role: AccessToken::role($accessToken)
         );
@@ -349,7 +351,7 @@ namespace App\Server\RequestHandler
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: \is_string($authorizationKey = Encrypter()->decrypt((string) $user->authorizationKey())) 
+                key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
                         ? $authorizationKey 
                         : throw new \Exception('Error decrypting the authorization key.')
             ));
@@ -362,7 +364,7 @@ namespace App\Server\RequestHandler
     {
         $time = \date_create_immutable('now');
 
-        $user = UserWithIdAndRole(
+        $user = User(
             id: Id::{RefreshToken::sub($refreshToken)}(),
             role: RefreshToken::role($refreshToken)
         );
@@ -378,7 +380,7 @@ namespace App\Server\RequestHandler
             (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
                 algo: AuthConfig()->fingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: \is_string($authorizationKey = Encrypter()->decrypt((string) $user->authorizationKey())) 
+                key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
                         ? $authorizationKey 
                         : throw new \Exception('Error decrypting the authorization key.')
             ));
@@ -655,7 +657,7 @@ namespace App\Server\RequestHandler
         $time = \date_create_immutable('now');
 
         // Fetch user accesses
-        $cacheItem = Cache()->getItem(key: 'api_access_'.$ipAddress);
+        $cacheItem = Cache()->getItem(key: "ip_address_{$ipAddress}_api_access");
 
         $userAccesses = $cacheItem->isHit() 
                                 ? $cacheItem->get() 

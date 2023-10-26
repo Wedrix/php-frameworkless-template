@@ -24,7 +24,7 @@ final class Response
     private string $reasonPhrase;
 
     /** @var array<int,string> Map of standard HTTP status code/reason phrases */
-    private static array $phrases = [
+    private const PHRASES = [
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing',
@@ -107,8 +107,8 @@ final class Response
         $this->stream = Utils::streamFor($body);
 
         $this->reasonPhrase = (static function() use($statusCode,$reasonPhrase): string {
-            if (\is_null($reasonPhrase) && isset(static::$phrases[$statusCode])) {
-                return static::$phrases[$statusCode];
+            if (\is_null($reasonPhrase) && isset(static::PHRASES[$statusCode])) {
+                return static::PHRASES[$statusCode];
             }
             return (string) $reasonPhrase;
         })();
@@ -274,8 +274,8 @@ final class Response
     {
         $this->statusCode = (int) $code;
 
-        if ($reasonPhrase === '' && isset(static::$phrases[$this->statusCode])) {
-            $reasonPhrase = static::$phrases[$this->statusCode];
+        if ($reasonPhrase === '' && isset(static::PHRASES[$this->statusCode])) {
+            $reasonPhrase = static::PHRASES[$this->statusCode];
         }
 
         $this->reasonPhrase = $reasonPhrase;

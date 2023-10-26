@@ -83,7 +83,7 @@ function Session(
                         'fingerprint' => \hash_hmac(
                             algo: AuthConfig()->fingerprintHashAlgorithm(),
                             data: $userContext = \bin2hex(\random_bytes(AccessControlConfig()->userContextKeyLength())),
-                            key: CipherText::decrypt($user->authorizationKey())
+                            key: CipherText::decrypt($authorizationKey = AccountOfUser(user: $user)->authorizationKey())
                         )
                     ],
                     key: AuthConfig()->signingKey(),
@@ -103,7 +103,7 @@ function Session(
                         'fingerprint' => \hash_hmac(
                             algo: AuthConfig()->fingerprintHashAlgorithm(),
                             data: $userContext,
-                            key: CipherText::decrypt($user->authorizationKey())
+                            key: CipherText::decrypt($authorizationKey)
                         )
                     ],
                     key: AuthConfig()->signingKey(),

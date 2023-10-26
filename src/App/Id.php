@@ -37,4 +37,12 @@ final class Id
             value: $value
         );
     }
+
+    public static function same(
+        self $idA,
+        self $idB
+    ): bool
+    {
+        return $idA->value === $idB->value;
+    }
 }
