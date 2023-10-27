@@ -25,7 +25,7 @@ function Console(): Console
             version: AppConfig()->version()
         );
 
-        $entityManagerProvider = new SingleManagerProvider(DataMapper());
+        $entityManagerProvider = new SingleManagerProvider(DataStore());
         $connectionProvider = new ConnectionFromManagerProvider($entityManagerProvider);
 
         $console->addCommands([

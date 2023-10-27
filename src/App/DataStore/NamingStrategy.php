@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\DataMapper;
+namespace App\DataStore;
 
 use Doctrine\ORM\Mapping\NamingStrategy;
 

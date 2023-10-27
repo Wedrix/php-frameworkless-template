@@ -8,5 +8,5 @@ parameters:
 		- config
 		- src
 	doctrine:
-		objectManagerLoader: tests/DataMapper.php
+		objectManagerLoader: tests/DataStore.php
 	rememberPossiblyImpureFunctionValues: false

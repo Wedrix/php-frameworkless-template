@@ -14,7 +14,7 @@ namespace App\Server
     use function App\AccessControlConfig;
     use function App\AppConfig;
     use function App\AuthConfig;
-    use function App\DataMapper;
+    use function App\DataStore;
     use function App\IPAddressParserConfig;
     use function App\Server\RequestHandler\accessTokenAuthenticatesRequest;
     use function App\Server\RequestHandler\ipAddressAPIRateLimitExceeded;
@@ -165,7 +165,7 @@ namespace App\Server
                 }
 
                 // Clear State
-                DataMapper()->clear();
+                DataStore()->clear();
             }
         };
     

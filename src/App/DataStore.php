@@ -9,9 +9,9 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
 
-use function App\DataMapper\NamingStrategy;
+use function App\DataStore\NamingStrategy;
 
-interface DataMapper extends EntityManagerInterface
+interface DataStore extends EntityManagerInterface
 {
     /**
     * Finds an object by its identifier.
@@ -32,11 +32,11 @@ interface DataMapper extends EntityManagerInterface
    public function find($className, $id, $lockMode = null, $lockVersion = null): object;
 }
 
-function DataMapper(): DataMapper
+function DataStore(): DataStore
 {
-    static $dataMapper;
+    static $dataStore;
     
-    $dataMapper ??= new class() extends EntityManagerDecorator implements DataMapper {
+    $dataStore ??= new class() extends EntityManagerDecorator implements DataStore {
         public function __construct() {
             $entityManagerConfig = ORMSetup::createAttributeMetadataConfiguration(
                 paths: DoctrineConfig()->paths(), 
@@ -72,10 +72,10 @@ function DataMapper(): DataMapper
      * Reset the EntityManager if closed
      * Doctrine closes the EntityManager on some Exceptions
      */
-    if (!$dataMapper->isOpen()) {
-        $dataMapper = new class(
-            closed: $dataMapper 
-        ) extends EntityManagerDecorator implements DataMapper {
+    if (!$dataStore->isOpen()) {
+        $dataStore = new class(
+            closed: $dataStore 
+        ) extends EntityManagerDecorator implements DataStore {
             public function __construct(
                 EntityManagerDecorator $closed
             ) {
@@ -102,5 +102,5 @@ function DataMapper(): DataMapper
         };
     }
 
-    return $dataMapper;
+    return $dataStore;
 }

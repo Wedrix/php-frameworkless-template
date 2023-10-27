@@ -78,7 +78,7 @@ function TaskQueue(): TaskQueue
             
                         $task();
                         
-                        DataMapper()->clear();
+                        DataStore()->clear();
 
                         $queue->ack(
                             deliveryTag: $message->getDeliveryTag()
