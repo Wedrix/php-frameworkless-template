@@ -1,4 +1,5 @@
 *.env
+var
 vendor
 .graphqlrc.yml
 .DS_Store
