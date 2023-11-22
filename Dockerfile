@@ -7,7 +7,7 @@ RUN apt-get update -yqq && apt-get install -yqq \
 
 RUN LC_ALL=C.UTF-8 add-apt-repository ppa:ondrej/php > /dev/null
 RUN apt-get update -yqq && apt-get install -yqq \
-    php8.2-dev php8.2-curl php8.2-pgsql composer php-pear pkg-config libevent-dev librabbitmq-dev uuid-dev curl
+    php8.2-dev php8.2-curl php8.2-pgsql php-pear pkg-config libevent-dev librabbitmq-dev uuid-dev curl unzip
 
 RUN printf "\n" | curl 'https://pecl.php.net/get/event-3.0.8.tgz' -o event-3.0.8.tgz && \
     pecl install event-3.0.8.tgz && \
@@ -34,6 +34,15 @@ RUN printf "\n" | curl 'https://pecl.php.net/get/amqp-2.0.0.tgz' -o amqp-2.0.0.t
     echo "extension=amqp.so" > /etc/php/8.2/cli/conf.d/amqp.ini
 
 COPY php.ini /etc/php/8.2/cli/php.ini
+
+COPY install-composer.sh ./
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+RUN chmod +x ./install-composer.sh && \
+    ./install-composer.sh
+
+ENV COMPOSER_ALLOW_SUPERUSER=0
 
 WORKDIR /var/www
 

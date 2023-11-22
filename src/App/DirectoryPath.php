@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App;
 
 /**
- * @see http://regexr.com/7ng47
+ * @see http://regexr.com/7ng41
  */
-final class FilePath
+final class DirectoryPath
 {
     private function __construct(
         private readonly string $value
@@ -29,11 +29,11 @@ final class FilePath
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid FilePath! The value cannot be empty.');
+            throw new \Exception('Invalid DirectoryPath! The value cannot be empty.');
         }
 
-        if (!\preg_match('/(((\w+:((\\|\/)\w+(.\w+)?)+))|(((\\|\/)\w+(.\w+)?)*))/', $value)) {
-            throw new \Exception('Invalid FilePath!');
+        if (!\preg_match('/(((\w+:(\\|\/))|(\w+:((\\|\/)\w+)+))|(\\|\/)|(((\\|\/)\w+)*))/', $value)) {
+            throw new \Exception('Invalid DirectoryPath!');
         }
 
         return new self(

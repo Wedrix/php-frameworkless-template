@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App;
 
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,9 +40,9 @@ function DataStore(): DataStore
     $dataStore ??= new class() extends EntityManagerDecorator implements DataStore {
         public function __construct() {
             $entityManagerConfig = ORMSetup::createAttributeMetadataConfiguration(
-                paths: DoctrineConfig()->paths(), 
-                isDevMode: DoctrineConfig()->isDevMode(), 
-                proxyDir: DoctrineConfig()->proxyDirectory(),
+                paths: \explode(',', (string) Config()->doctrineModelsDirectories()), 
+                isDevMode: Config()->doctrineIsDevMode(), 
+                proxyDir: (string) Config()->doctrineProxiesDirectory(),
                 cache: Cache()
             );
             
@@ -52,7 +53,12 @@ function DataStore(): DataStore
              */
             $entityManagerConfig->setLazyGhostObjectEnabled(true);
     
-            $entityManager = EntityManager::create(DoctrineConfig()->connection(), $entityManagerConfig);
+            $connection = DriverManager::getConnection(Config()->doctrineConnection(), $entityManagerConfig);
+
+            $entityManager = new EntityManager(
+                conn: $connection,
+                config: $entityManagerConfig
+            );
     
             parent::__construct(
                 wrapped: $entityManager
@@ -80,12 +86,12 @@ function DataStore(): DataStore
                 EntityManagerDecorator $closed
             ) {
                 parent::__construct(
-                    wrapped: EntityManager::create(
+                    wrapped: new EntityManager(
                         /**
                          * No need to check for an open connection since it's handled internally
                          * @see https://github.com/doctrine/dbal/pull/4966#issuecomment-1015006379
                          */
-                        connection: $closed->getConnection(),
+                        conn: $closed->getConnection(),
                         config: $closed->getConfiguration(),
                         eventManager: $closed->getEventManager()
                     )

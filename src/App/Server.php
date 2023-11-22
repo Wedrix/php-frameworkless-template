@@ -39,8 +39,8 @@ function Server(): Server
             $idealNumberOfWorkers = match(\PHP_OS_FAMILY) {
                 'Linux' => (int) \shell_exec('nproc') * 4, // Linux
                 'Darwin' => (int) \shell_exec('sysctl -n hw.logicalcpu') * 4, // MacOS
-                'Windows' => throw new \Exception('Windows is currently not supported. Kindly consider using sub-system for linux.'),
-                default => throw new \Exception('Operating system not supported. Only MacOS and Linux are currently supported.')
+                'Windows' => 1, // Windows (only supports a single process)
+                default => throw new \Exception('This application does not currently run on your operating system. Kindly consider running it on either Linux, MacOS, or Windows (using the Windows Subsystem for Linux).')
             };
 
             $minimumNumberOfWorkers = ($numberOfJobs = \iterator_count(ConfiguredJobs())) + 1; // plus one for the Http Worker
@@ -94,17 +94,17 @@ function Server(): Server
             }
     
             // Init HTTP workers
-            $worker = new Worker('http://' . ServerConfig()->host() . ':' . ServerConfig()->port());
+            $worker = new Worker('http://' . Config()->serverHost() . ':' . Config()->serverPort());
             $worker->count = $this->numberOfHttpWorkers;
-            $worker->name = AppConfig()->name();
+            $worker->name = Config()->appName();
     
             // Initialize JOB workers
             foreach (ConfiguredJobs() as $jobIndex => $job) {
-                $jobWorker = new Worker('text://' . ServerConfig()->host() . ':' . \strval(65432 + $jobIndex));
+                $jobWorker = new Worker('text://' . Config()->serverHost() . ':' . \strval(65432 + $jobIndex));
 
                 $jobWorker->count = $this->numbersOfJobWorkers[$jobIndex];
 
-                $jobWorker->name = AppConfig()->name() .' [job] ' . $job->name();
+                $jobWorker->name = Config()->appName() .' [job] ' . $job->name();
 
                 $jobWorker->onWorkerStart = static function() use($job) {
                     /**
@@ -129,12 +129,12 @@ function Server(): Server
 
                     RequestHandler()->handle(request: $request, response: $response);
                     
-                    $response->setHeader('Server', AppConfig()->name());
+                    $response->setHeader('Server', Config()->appName());
 
                     $connection->send($response);
                 } 
                 catch(\Throwable $error) {
-                    if (AppConfig()->environment() === 'development') {
+                    if (Config()->appEnvironment() === 'development') {
                         echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
                     }
 

@@ -13,7 +13,7 @@ function SymfonyMailer(): Mailer
 
     $symfonyMailer ??= new Mailer(
         transport: Transport::fromDsn(
-            dsn: SymfonyMailerConfig()->dsn()
+            dsn: Config()->symfonyMailerDsn()
         )
     );
 

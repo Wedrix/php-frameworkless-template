@@ -8,7 +8,7 @@ use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-use function App\AuthConfig;
+use function App\Config;
 
 final class RefreshToken
 {
@@ -34,8 +34,8 @@ final class RefreshToken
                 'role' => $this->role,
                 'fingerprint' => $this->fingerprint
             ],
-            key: AuthConfig()->signingKey(),
-            alg: AuthConfig()->signingAlgorithm(),
+            key: Config()->authSigningKey(),
+            alg: Config()->authSigningAlgorithm(),
         );
     }
 
@@ -57,8 +57,8 @@ final class RefreshToken
             $payload = (array) JWT::decode(
                 $value,
                 new Key(
-                    AuthConfig()->signingKey(),
-                    AuthConfig()->signingAlgorithm()
+                    Config()->authSigningKey(),
+                    Config()->authSigningAlgorithm()
                 )
             );
         }

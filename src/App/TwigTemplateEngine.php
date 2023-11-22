@@ -12,12 +12,14 @@ function TwigTemplateEngine(): Environment
     static $twigTemplateEngine;
     
     $twigTemplateEngine ??= (static function () {
-        $twigLoader = new FilesystemLoader(EmailConfig()->templatesDirectory());
-
-        return new Environment($twigLoader, [
-            'debug' => AppConfig()->environment() === 'development',
-            'cache' => EmailConfig()->templatesCacheDirectory(),
-        ]);
+        return new Environment(
+            loader: new FilesystemLoader((string) Config()->emailTemplatesDirectory()), 
+            options: [
+                'debug' => Config()->appEnvironment() === 'development',
+                'cache' => (string) Config()->emailTemplatesCacheDirectory(),
+                'optimizations' => Config()->appEnvironment() === 'development' ? 0 : -1
+            ],
+        );
     })();
 
     return $twigTemplateEngine;

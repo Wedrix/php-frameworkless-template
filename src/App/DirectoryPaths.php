@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App;
 
-final class FilePaths
+final class DirectoryPaths
 {
     /**
-     * @param array<int,FilePath> $elements
+     * @param array<int,DirectoryPath> $elements
      */
     private function __construct(
         private readonly array $elements
@@ -29,14 +29,14 @@ final class FilePaths
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid FilePaths! The value cannot be empty.');
+            throw new \Exception('Invalid DirectoryPaths! The value cannot be empty.');
         }
 
-        $filePathsParts = \explode(',',$value);
+        $directoryPathsParts = \explode(',',$value);
 
         $elements = \array_map(
-            static fn(string $filePathPart) => FilePath::{$filePathPart}(),
-            $filePathsParts
+            static fn(string $directoryPathPart) => DirectoryPath::{$directoryPathPart}(),
+            $directoryPathsParts
         );
 
         return new self(

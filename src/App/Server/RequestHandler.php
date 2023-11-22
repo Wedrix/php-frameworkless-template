@@ -11,11 +11,8 @@ namespace App\Server
     use App\Server\RequestHandler\UserOfRequest;
     use GraphQL\Error\DebugFlag;
 
-    use function App\AccessControlConfig;
-    use function App\AppConfig;
-    use function App\AuthConfig;
+    use function App\Config;
     use function App\DataStore;
-    use function App\IPAddressParserConfig;
     use function App\Server\RequestHandler\accessTokenAuthenticatesRequest;
     use function App\Server\RequestHandler\ipAddressAPIRateLimitExceeded;
     use function App\Server\RequestHandler\refreshTokenAuthenticatesRequest;
@@ -48,33 +45,31 @@ namespace App\Server
             {
                 // Set Request IPAddress
                 $request->setAttribute(
-                    attribute: IPAddressParserConfig()->attributeName(),
+                    attribute: Config()->ipAddressParserAttributeName(),
                     value: requestIPAddress(
                         request: $request,
-                        checkProxyHeaders: IPAddressParserConfig()->checkProxyHeaders(),
-                        headersToInspect: IPAddressParserConfig()->headersToInspect(),
-                        trustedProxies: IPAddressParserConfig()->trustedProxies()
+                        checkProxyHeaders: Config()->ipAddressParserCheckProxyHeaders(),
+                        headersToInspect: Config()->ipAddressParserHeadersToInspect(),
+                        trustedProxies: Config()->ipAddressParserTrustedProxies()
                     ) ?? throw new \Exception('Error resolving the IP Address for this request.')
                 );
 
                 // Check Rate Limiting
-                if (ipAddressAPIRateLimitExceeded(ipAddress: $request->attribute(IPAddressParserConfig()->attributeName()))) {
+                if (ipAddressAPIRateLimitExceeded(ipAddress: $request->attribute(Config()->ipAddressParserAttributeName()))) {
                     throw new \Exception('Rate limit exceeded.');
                 }
 
                 // Attach CORS Headers
-                {
-                    $origin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.');
-        
-                    $allowedOrigins = AccessControlConfig()->allowedOrigins();
+                if (!\is_null($origin = requestOrigin($request))) {
+                    $allowedOrigins = Config()->accessControlAllowedOrigins();
                     
                     $response->setHeader('Access-Control-Allow-Origin', \in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[0]);
                     $response->setHeader('Vary', 'Origin');
-                    $response->setHeader('Access-Control-Allow-Headers', AccessControlConfig()->allowedHeaders());
-                    $response->setHeader('Access-Control-Allow-Methods', AccessControlConfig()->allowedMethods());
-                    $response->setHeader('Access-Control-Expose-Headers', AccessControlConfig()->exposeHeaders());
+                    $response->setHeader('Access-Control-Allow-Headers', Config()->accessControlAllowedHeaders());
+                    $response->setHeader('Access-Control-Allow-Methods', Config()->accessControlAllowedMethods());
+                    $response->setHeader('Access-Control-Expose-Headers', Config()->accessControlExposeHeaders());
         
-                    if (AccessControlConfig()->allowCredentials()) {
+                    if (Config()->accessControlAllowCredentials()) {
                         $response->setHeader('Access-Control-Allow-Credentials', 'true');
                     }
          
@@ -102,11 +97,11 @@ namespace App\Server
                             accessToken: $accessToken,
                             contextCookie: ContextCookie::{
                                 (static function() use($userContext): string {
-                                    $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+                                    $maxAge = Config()->authRefreshTokenTTLInMinutes() * 60;
                             
                                     $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
                             
-                                    if (AppConfig()->environment() !== 'development') {
+                                    if (Config()->appEnvironment() !== 'development') {
                                         $cookie .= '; Secure';
                                     }
                             
@@ -132,7 +127,7 @@ namespace App\Server
                 }
                 
                 // Handle GraphQL Request
-                if ($request->uri()->path() === AppConfig()->endpoint()) {
+                if ($request->uri()->path() === Config()->appEndpoint()) {
                     $input = (array) $request->parsedBody();
     
                     $response->body()
@@ -151,7 +146,7 @@ namespace App\Server
                                             validationRules: null
                                         )
                                         ->toArray(
-                                            debug: (AppConfig()->environment() === 'development')
+                                            debug: (Config()->appEnvironment() === 'development')
                                                 ? DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::INCLUDE_TRACE
                                                 : DebugFlag::NONE
                                         )
@@ -180,10 +175,8 @@ namespace App\Server\RequestHandler
     use App\Password;
     use App\Server\Request;
 
-    use function App\AccessControlConfig;
-    use function App\AppConfig;
-    use function App\AuthConfig;
     use function App\Cache;
+    use function App\Config;
     use function App\Encrypter;
 
     /**
@@ -341,15 +334,15 @@ namespace App\Server\RequestHandler
         );
 
         return
-            (AccessToken::iss($accessToken) === AppConfig()->domain()) &&
+            (AccessToken::iss($accessToken) === Config()->appDomain()) &&
             (AccessToken::aud($accessToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
-            (\in_array(AccessToken::aud($accessToken), AccessControlConfig()->allowedOrigins())) &&
+            (\in_array(AccessToken::aud($accessToken), Config()->accessControlAllowedOrigins())) &&
             (AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
-            (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (AuthConfig()->accessTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (Config()->authAccessTokenTTLInMinutes() * 60))->getTimestamp()) &&
             (AccessToken::sub($accessToken) === (string) $user->id()) &&
             (AccessToken::role($accessToken) === $user->role()) &&
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
-                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                algo: Config()->authFingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
                 key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
                         ? $authorizationKey 
@@ -370,15 +363,15 @@ namespace App\Server\RequestHandler
         );
 
         return 
-            (RefreshToken::iss($refreshToken) === AppConfig()->domain()) &&
+            (RefreshToken::iss($refreshToken) === Config()->appDomain()) &&
             (RefreshToken::aud($refreshToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
-            (\in_array(RefreshToken::aud($refreshToken), AccessControlConfig()->allowedOrigins())) &&
+            (\in_array(RefreshToken::aud($refreshToken), Config()->accessControlAllowedOrigins())) &&
             (RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
-            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (AuthConfig()->refreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
+            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (Config()->authRefreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
             (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
             (RefreshToken::role($refreshToken) === $user->role()) &&
             (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
-                algo: AuthConfig()->fingerprintHashAlgorithm(),
+                algo: Config()->authFingerprintHashAlgorithm(),
                 data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
                 key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
                         ? $authorizationKey 
@@ -671,20 +664,20 @@ namespace App\Server\RequestHandler
         // Filter user accesses where timestamps < current timestamp - access window size in seconds
         $userAccesses = \array_filter(
             $userAccesses,
-            fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - AccessControlConfig()->apiAccessWindowSizeInSeconds())
+            fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - Config()->accessControlApiAccessWindowSizeInSeconds())
         );
 
         // Save filtered user accesses
         Cache()->save(
             $cacheItem->set($userAccesses)
-                    ->expiresAfter(AccessControlConfig()->apiAccessWindowSizeInSeconds())
+                    ->expiresAfter(Config()->accessControlApiAccessWindowSizeInSeconds())
         );
 
         // Count filtered user accesses
         $accessCount = \count($userAccesses);
 
         // Exceeded if user accesses count > limit
-        if ($accessCount > AccessControlConfig()->apiAccessLimit()) {
+        if ($accessCount > Config()->accessControlApiAccessLimit()) {
             return true;
         }
 

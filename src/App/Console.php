@@ -10,6 +10,7 @@ use Symfony\Component\Console\Application as Console;
 
 use function App\Console\AddPluginWatchtowerCommand;
 use function App\Console\AddScalarTypeDefinitionWatchtowerCommand;
+use function App\Console\GenerateCacheWatchtowerCommand;
 use function App\Console\GenerateSchemaWatchtowerCommand;
 use function App\Console\ListPluginsWatchtowerCommand;
 use function App\Console\ListScalarTypeDefinitionsWatchtowerCommand;
@@ -21,8 +22,8 @@ function Console(): Console
     
     $console ??= (static function (): Console {
         $console = new Console(
-            name: AppConfig()->name(),
-            version: AppConfig()->version()
+            name: Config()->appName(),
+            version: Config()->appVersion()
         );
 
         $entityManagerProvider = new SingleManagerProvider(DataStore());
@@ -55,6 +56,7 @@ function Console(): Console
             UpdateSchemaWatchtowerCommand(),
             AddScalarTypeDefinitionWatchtowerCommand(),
             ListScalarTypeDefinitionsWatchtowerCommand(),
+            GenerateCacheWatchtowerCommand(),
 
             //TODO: ... commands go here
         ]);

@@ -87,3 +87,43 @@ function extract_ip_address(
 
     return $string;
 }
+
+/**
+ * Determines is a url string, directory string, or file path string is absolute.
+ * @see https://github.com/symfony/symfony/blob/6.3/src/Symfony/Component/Filesystem/Path.php#L364
+ */
+function is_absolute_path(
+    string $path
+): bool
+{
+    if ('' === $path) {
+        return false;
+    }
+
+    // Strip scheme
+    if (false !== $schemeSeparatorPosition = strpos($path, '://')) {
+        $path = substr($path, $schemeSeparatorPosition + 3);
+    }
+
+    $firstCharacter = $path[0];
+
+    // UNIX root "/" or "\" (Windows style)
+    if ('/' === $firstCharacter || '\\' === $firstCharacter) {
+        return true;
+    }
+
+    // Windows root
+    if (\strlen($path) > 1 && ctype_alpha($firstCharacter) && ':' === $path[1]) {
+        // Special case: "C:"
+        if (2 === \strlen($path)) {
+            return true;
+        }
+
+        // Normal case: "C:/ or "C:\"
+        if ('/' === $path[2] || '\\' === $path[2]) {
+            return true;
+        }
+    }
+
+    return false;
+}

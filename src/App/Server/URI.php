@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Server;
 
+use function App\Config;
+
 final class URI
 {
-    /** @var array<int,string> Standard ports and supported schemes */
-    private const SCHEMES = [80 => 'http', 443 => 'https'];
-
     private string $scheme;
 
     private string $userInfo;
@@ -254,11 +253,11 @@ final class URI
             return '';
         }
 
-        if (!\in_array($scheme, static::SCHEMES, true)) {
+        if (!\in_array($scheme, Config()->appUriSchemes(), true)) {
             throw new \InvalidArgumentException(\sprintf(
                 'Unsupported scheme "%s". It must be an empty string or any of "%s".',
                 $scheme,
-                \implode('", "', static::SCHEMES)
+                \implode('", "', Config()->appUriSchemes())
             ));
         }
 
@@ -371,6 +370,6 @@ final class URI
             return false;
         }
 
-        return (!isset(static::SCHEMES[$this->port]) || $this->scheme !== static::SCHEMES[$this->port]);
+        return (!isset(Config()->appUriSchemes()[$this->port]) || $this->scheme !== Config()->appUriSchemes()[$this->port]);
     }
 }

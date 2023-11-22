@@ -32,14 +32,14 @@ function ListScalarTypeDefinitionsWatchtowerCommand(): Command
                 $styledOutput = new SymfonyStyle($input, $output);
         
                 $styledOutput->table(
-                    ['<comment>Type Name</comment>', '<comment>Directory</comment>'],
+                    ['<comment>Type Name</comment>', '<comment>File</comment>'],
                     (function (): array {
                         $results = [];
         
                         foreach (WatchtowerConsole()->scalarTypeDefinitions() as $scalarTypeDefinition) {
                             $results[] = [
                                 $scalarTypeDefinition->typeName(),
-                                WatchtowerConsole()->scalarTypeDefinitions()->directory($scalarTypeDefinition)
+                                WatchtowerConsole()->scalarTypeDefinitions()->filePath($scalarTypeDefinition)
                             ];
                         }
         

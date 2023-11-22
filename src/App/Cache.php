@@ -13,7 +13,7 @@ function Cache(): CacheItemPoolInterface
     $cache ??= (static function (): CacheItemPoolInterface {
         $redis = new \Redis();
 
-        $redis->connect(RedisConfig()->host(), RedisConfig()->port());
+        $redis->connect(Config()->redisHost(), Config()->redisPort());
     
         return new \MatthiasMullie\Scrapbook\Psr6\Pool(
             store: new \MatthiasMullie\Scrapbook\Adapters\Redis(client: $redis)

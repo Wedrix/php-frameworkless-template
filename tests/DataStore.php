@@ -1,7 +1,9 @@
 <?php
 
-require dirname(__DIR__).'/vendor/autoload.php';
+declare(strict_types=1);
 
-use function App\DataStore;
+require \dirname(__DIR__).'/src/App.php';
 
-return DataStore();
+App();
+
+return App\DataStore();

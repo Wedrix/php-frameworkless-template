@@ -2,6 +2,5 @@
 vendor
 .graphqlrc.yml
 .DS_Store
-var
 .devcontainer
 .phpunit.result.cache

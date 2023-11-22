@@ -7,9 +7,7 @@ namespace App\Server\RequestHandler;
 use App\CipherText;
 use Firebase\JWT\JWT;
 
-use function App\AccessControlConfig;
-use function App\AppConfig;
-use function App\AuthConfig;
+use function App\Config;
 
 interface Session
 {
@@ -74,50 +72,50 @@ function Session(
             $this->accessToken = AccessToken::{
                 JWT::encode(
                     payload: [
-                        'iss' => AppConfig()->domain(),
+                        'iss' => Config()->appDomain(),
                         'aud' => $requestOrigin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'),
                         'iat' => $time->getTimestamp(),
-                        'exp' => $time->modify('+'. AuthConfig()->accessTokenTTLInMinutes().' minutes')->getTimestamp(),
+                        'exp' => $time->modify('+'. Config()->authAccessTokenTTLInMinutes().' minutes')->getTimestamp(),
                         'sub' => (string) $user->id(),
                         'role' => $user->role(),
                         'fingerprint' => \hash_hmac(
-                            algo: AuthConfig()->fingerprintHashAlgorithm(),
-                            data: $userContext = \bin2hex(\random_bytes(AccessControlConfig()->userContextKeyLength())),
+                            algo: Config()->authFingerprintHashAlgorithm(),
+                            data: $userContext = \bin2hex(\random_bytes(Config()->accessControlUserContextKeyLength())),
                             key: CipherText::decrypt($authorizationKey = AccountOfUser(user: $user)->authorizationKey())
                         )
                     ],
-                    key: AuthConfig()->signingKey(),
-                    alg: AuthConfig()->signingAlgorithm(),
+                    key: Config()->authSigningKey(),
+                    alg: Config()->authSigningAlgorithm(),
                 )
             }();
     
             $this->refreshToken = RefreshToken::{
                 JWT::encode(
                     payload: [
-                        'iss' => AppConfig()->domain(),
+                        'iss' => Config()->appDomain(),
                         'aud' => $requestOrigin,
                         'iat' => $time->getTimestamp(),
-                        'exp' => $time->modify('+'.AuthConfig()->refreshTokenTTLInMinutes().' minutes')->getTimestamp(),
+                        'exp' => $time->modify('+'.Config()->authRefreshTokenTTLInMinutes().' minutes')->getTimestamp(),
                         'sub' => (string) $user->id(),
                         'role' => $user->role(),
                         'fingerprint' => \hash_hmac(
-                            algo: AuthConfig()->fingerprintHashAlgorithm(),
+                            algo: Config()->authFingerprintHashAlgorithm(),
                             data: $userContext,
                             key: CipherText::decrypt($authorizationKey)
                         )
                     ],
-                    key: AuthConfig()->signingKey(),
-                    alg: AuthConfig()->signingAlgorithm(),
+                    key: Config()->authSigningKey(),
+                    alg: Config()->authSigningAlgorithm(),
                 )
             }();
     
             $this->contextCookie = ContextCookie::{
                 (static function() use($userContext): string {
-                    $maxAge = AuthConfig()->refreshTokenTTLInMinutes() * 60;
+                    $maxAge = Config()->authRefreshTokenTTLInMinutes() * 60;
             
                     $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
             
-                    if (AppConfig()->environment() !== 'development') {
+                    if (Config()->appEnvironment() !== 'development') {
                         $cookie .= '; Secure';
                     }
             

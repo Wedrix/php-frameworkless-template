@@ -29,10 +29,10 @@ function TaskQueue(): TaskQueue
         public function __construct()
         {
             $connection = new \AMQPConnection([
-                'host' => RabbitMQConfig()->host(),
-                'port' => RabbitMQConfig()->port(), 
-                'login' => RabbitMQConfig()->user(), 
-                'password' => RabbitMQConfig()->password()
+                'host' => Config()->rabbitMQHost(),
+                'port' => Config()->rabbitMQPort(), 
+                'login' => Config()->rabbitMQUser(), 
+                'password' => Config()->rabbitMQPassword()
             ]);
 
             \register_shutdown_function(static function() use($connection) {

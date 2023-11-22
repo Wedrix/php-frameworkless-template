@@ -6,9 +6,8 @@ namespace App\Server\RequestHandler;
 
 use Wedrix\Watchtower\Executor;
 
-use function App\AppConfig;
+use function App\Config;
 use function App\DataStore;
-use function App\WatchtowerConfig;
 
 function WatchtowerExecutor(): Executor
 {
@@ -16,11 +15,11 @@ function WatchtowerExecutor(): Executor
     
     $watchtowerExecutor ??= new Executor(
         entityManager: DataStore(),
-        schemaFile: WatchtowerConfig()->schemaFile(),
-        pluginsDirectory: WatchtowerConfig()->pluginsDirectory(),
-        scalarTypeDefinitionsDirectory: WatchtowerConfig()->scalarTypeDefinitionsDirectory(),
-        cachesSchema: AppConfig()->environment() !== 'development',
-        schemaCacheDirectory: WatchtowerConfig()->schemaCacheDirectory()
+        schemaFile: Config()->watchtowerSchemaFileDirectory().'/'.Config()->watchtowerSchemaFileName(),
+        pluginsDirectory: (string) Config()->watchtowerPluginsDirectory(),
+        scalarTypeDefinitionsDirectory: (string) Config()->watchtowerScalarTypeDefinitionsDirectory(),
+        cacheDirectory: (string) Config()->watchtowerCacheDirectory(),
+        optimize: Config()->appEnvironment() !== 'development'
     );
 
     return $watchtowerExecutor;

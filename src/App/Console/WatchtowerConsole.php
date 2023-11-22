@@ -7,7 +7,7 @@ namespace App\Console;
 use Wedrix\Watchtower\Console as WatchtowerConsole;
 
 use function App\DataStore;
-use function App\WatchtowerConfig;
+use function App\Config;
 
 function WatchtowerConsole(): WatchtowerConsole
 {
@@ -15,10 +15,11 @@ function WatchtowerConsole(): WatchtowerConsole
     
     $console ??= new WatchtowerConsole(
         entityManager: DataStore(),
-        schemaFile: WatchtowerConfig()->schemaFile(),
-        pluginsDirectory: WatchtowerConfig()->pluginsDirectory(),
-        scalarTypeDefinitionsDirectory: WatchtowerConfig()->scalarTypeDefinitionsDirectory(),
-        schemaCacheDirectory: WatchtowerConfig()->schemaCacheDirectory()
+        schemaFileDirectory: (string) Config()->watchtowerSchemaFileDirectory(),
+        schemaFileName: (string) Config()->watchtowerSchemaFileName(),
+        pluginsDirectory: (string) Config()->watchtowerPluginsDirectory(),
+        scalarTypeDefinitionsDirectory: (string) Config()->watchtowerScalarTypeDefinitionsDirectory(),
+        cacheDirectory: (string) Config()->watchtowerCacheDirectory()
     );
 
     return $console;

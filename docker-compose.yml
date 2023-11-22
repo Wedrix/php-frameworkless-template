@@ -3,13 +3,13 @@ services:
   app:
     build:
       context: ./
-      dockerfile: dev.Dockerfile
+      dockerfile: Dockerfile
     ports:
       - 80:80
     volumes:
       - ./:/var/www
     networks: 
-      - storekd
+      - app
     stop_signal: SIGKILL
     depends_on:
       postgres:
@@ -18,64 +18,52 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      meilisearch: 
-        condition: service_healthy
   postgres:
     image: postgis/postgis:15-3.3
     ports:
       - 5432:5432
     volumes: 
       - /var/lib/postgres15/data:/var/lib/postgres15/data
-    env_file: ./docker.env
+    env_file: ./postgres.env
     networks:
-      - storekd
+      - app
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 10s
-      timeout: 10s
-      retries: 19
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER && psql -U $$POSTGRES_USER -c 'SELECT pg_is_in_recovery();' | grep -q 'f'"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 3
   redis:
     image: redis:6.2.1-alpine
     ports: 
       - 6379:6379
     networks:
-      - storekd
+      - app
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 3
   rabbitmq:
     image: rabbitmq:3.8-alpine
     ports:
       - 5672:5672
     networks: 
-      - storekd
+      - app
     healthcheck:
       test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 10s
-      retries: 10
-  meilisearch:
-    image: getmeili/meilisearch:v0.29
-    ports:
-      - 7700:7700
-    volumes:
-      - /var/lib/meilisearch/data.ms:/data.ms
-    networks: 
-      - storekd
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7700"]
-      interval: 10s
+      start_period: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 3
   mailcatcher:
     image: schickling/mailcatcher:latest
     ports:
       - 1080:1080
       - 1025:1025
     networks:
-      - storekd
+      - app
 networks: 
-  storekd:
+  app:
     driver: bridge

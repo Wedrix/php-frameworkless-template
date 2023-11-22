@@ -8,7 +8,7 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
-use function App\ServerConfig;
+use function App\Config;
 
 function Logger(): Logger
 {
@@ -16,7 +16,7 @@ function Logger(): Logger
     
     $logger ??= (static function (): Logger {
         $formatter = new LineFormatter("\n%datetime% >> %channel%:%level_name% >> %message%", "Y-m-d H:i:s");
-        $stream = new StreamHandler(ServerConfig()->logFilePath());
+        $stream = new StreamHandler(Config()->serverLogFileDirectory().'/'.Config()->serverLogFileName());
         $stream->setFormatter($formatter);
         $logger = new Logger('app');
         $logger->pushHandler($stream);

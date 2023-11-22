@@ -26,16 +26,16 @@ function User(
     ) implements User
     {
         public function __construct(
-            private readonly Id $id,
-            private readonly string $role
+            private readonly ?Id $id,
+            private readonly ?string $role
         ){}
         
-        public function id(): Id
+        public function id(): ?Id
         {
             return $this->id;
         }
 
-        public function role(): string
+        public function role(): ?string
         {
             return $this->role;
         }
