@@ -116,12 +116,12 @@ namespace App\Server
                         )
                     );
     
-                    UserOfRequest::associate($user, $request);
+                    UserOfRequest::associate(user: $user, request: $request);
                 }
                 // Else Associate Anonymous User with Request
                 else {
                     UserOfRequest::associate(
-                        user: User(id: null, role: null),
+                        user: $user = User(id: null, role: null),
                         request: $request
                     );
                 }
@@ -160,6 +160,8 @@ namespace App\Server
                 }
 
                 // Clear State
+                UserOfRequest::dissociate(user: $user, request: $request);
+                
                 DataStore()->clear();
             }
         };
