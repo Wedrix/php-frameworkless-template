@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace App;
 
 use Wedrix\Watchtower\Console as WatchtowerConsole;
 

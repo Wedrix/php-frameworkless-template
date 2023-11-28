@@ -66,7 +66,6 @@
             "src/App/Console/ListPluginsWatchtowerCommand.php",
             "src/App/Console/ListScalarTypeDefinitionsWatchtowerCommand.php",
             "src/App/Console/UpdateSchemaWatchtowerCommand.php",
-            "src/App/Console/WatchtowerConsole.php",
             "src/App/DataStore/NamingStrategy.php",
             "src/App/DataStore/UnderscoreNamingStrategy.php",
             "src/App/Server/RequestHandler/AccountOfUser.php",
@@ -76,7 +75,6 @@
             "src/App/Server/RequestHandler/User.php",
             "src/App/Server/RequestHandler/UserOfRequest.php",
             "src/App/Server/RequestHandler/UserOfSession.php",
-            "src/App/Server/RequestHandler/WatchtowerExecutor.php",
             "src/App/Server/RequestHandler/WindowAccess.php",
             "src/App/Server/ConfiguredJobs.php",
             "src/App/Server/Logger.php",
@@ -95,6 +93,8 @@
             "src/App/SymfonyMailer.php",
             "src/App/TaskQueue.php",
             "src/App/TwigTemplateEngine.php",
+            "src/App/WatchtowerConsole.php",
+            "src/App/WatchtowerExecutor.php",
             "src/Inflector.php"
         ]
     },

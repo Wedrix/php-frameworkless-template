@@ -8,6 +8,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function App\WatchtowerConsole;
+
 function GenerateSchemaWatchtowerCommand(): Command
 {
     static $command;

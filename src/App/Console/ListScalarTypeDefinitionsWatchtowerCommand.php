@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function App\WatchtowerConsole;
+
 function ListScalarTypeDefinitionsWatchtowerCommand(): Command
 {
     static $command;

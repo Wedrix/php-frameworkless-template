@@ -23,7 +23,7 @@ namespace App\Server
     use function App\Server\RequestHandler\requestUserContext;
     use function App\Server\RequestHandler\Session;
     use function App\Server\RequestHandler\User;
-    use function App\Server\RequestHandler\WatchtowerExecutor;
+    use function App\WatchtowerExecutor;
 
     interface RequestHandler
     {

@@ -14,6 +14,7 @@ namespace
     use function App\DataStore;
     use function App\Server;
     use function App\TwigTemplateEngine;
+    use function App\WatchtowerConsole;
 
     interface App
     {
@@ -53,6 +54,11 @@ namespace
                     DataStore()->getProxyFactory()->generateProxyClasses(
                         classes: DataStore()->getMetadataFactory()->getAllMetadata()
                     );
+                }
+
+                // Generate Watchtower Cache for non-dev environments
+                if (Config()->appEnvironment() !== 'development') {
+                    WatchtowerConsole()->generateCache();
                 }
 
                 // Generate Email templates Cache for non-dev environments
