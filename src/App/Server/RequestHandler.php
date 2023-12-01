@@ -157,12 +157,13 @@ namespace App\Server
                             );
                     
                     $response->setHeader('Content-Type', 'application/json; charset=utf-8');
-                }
 
-                // Clear State
-                UserOfRequest::dissociate(user: $user, request: $request);
+                    // Clear Data Store
+                    DataStore()->clear();
+                }
                 
-                DataStore()->clear();
+                // Dissociate Request from User
+                UserOfRequest::dissociate(user: $user, request: $request);
             }
         };
     

@@ -77,8 +77,6 @@ function TaskQueue(): TaskQueue
                         $task = \unserialize($message->getBody())->getClosure();
             
                         $task();
-                        
-                        DataStore()->clear();
 
                         $queue->ack(
                             deliveryTag: $message->getDeliveryTag()

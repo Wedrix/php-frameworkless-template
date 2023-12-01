@@ -30,7 +30,7 @@ final class Text
         }
 
         if ($value !== \strip_tags_with_content($value)) {
-            throw new \Exception('Invalid Text!');
+            throw new \Exception('Invalid Text! The value cannot contain HTML tags.');
         }
 
         return new self(
@@ -38,7 +38,7 @@ final class Text
         );
     }
 
-    public static function equalTo(
+    public static function same(
         self $textA,
         self $textB
     ): bool

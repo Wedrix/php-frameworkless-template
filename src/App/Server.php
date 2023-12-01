@@ -93,36 +93,13 @@ function Server(): Server
                 throw new \Exception("The server is already running.");
             }
     
+            // Point Workerman to our Request class to use it within onMessage
+            Http::requestClass(Request::class);
+    
             // Init HTTP workers
             $worker = new Worker('http://' . Config()->serverHost() . ':' . Config()->serverPort());
             $worker->count = $this->numberOfHttpWorkers;
             $worker->name = Config()->appName();
-    
-            // Initialize JOB workers
-            foreach (ConfiguredJobs() as $jobIndex => $job) {
-                $jobWorker = new Worker('text://' . Config()->serverHost() . ':' . \strval(65432 + $jobIndex));
-
-                $jobWorker->count = $this->numbersOfJobWorkers[$jobIndex];
-
-                $jobWorker->name = Config()->appName() .' [job] ' . $job->name();
-
-                $jobWorker->onWorkerStart = static function() use($job) {
-                    /**
-                     * Supports non-standard @reboot macro for one-time job
-                     */
-                    // TODO: Create pull request to natively support macros in library?
-                    if ($job->cronSchedule() === '@reboot') {
-                        $job->run();
-                    } else {
-                        new Crontab($job->cronSchedule(), [$job, 'run'], $job->name()); 
-                    }     		
-                };
-            }
-    
-            // Point Workerman to our Request class to use it within onMessage
-            Http::requestClass(Request::class);
-    
-            // Main Loop
             $worker->onMessage = static function(TcpConnection $connection, Request $request) {
                 try {
                     $response = new Response();
@@ -133,7 +110,7 @@ function Server(): Server
 
                     $connection->send($response);
                 } 
-                catch(\Throwable $error) {
+                catch (\Throwable $error) {
                     if (Config()->appEnvironment() === 'development') {
                         echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
                     }
@@ -143,6 +120,37 @@ function Server(): Server
                     $connection->send(new Response());
                 }
             };
+    
+            // Init JOB workers
+            foreach (ConfiguredJobs() as $jobIndex => $job) {
+                $jobWorker = new Worker('text://' . Config()->serverHost() . ':' . \strval(65432 + $jobIndex));
+
+                $jobWorker->count = $this->numbersOfJobWorkers[$jobIndex];
+
+                $jobWorker->name = Config()->appName() .' [job] ' . $job->name();
+
+                $jobWorker->onWorkerStart = static function() use($job) {
+                    try {
+                        /**
+                         * Supports non-standard @reboot macro for one-time job
+                         */
+                        // TODO: Create pull request to natively support macros in library?
+                        if ($job->cronSchedule() === '@reboot') {
+                            $job->run();
+                        } 
+                        else {
+                            new Crontab($job->cronSchedule(), [$job, 'run'], $job->name()); 
+                        } 
+                    } 
+                    catch (\Throwable $error) {
+                        if (Config()->appEnvironment() === 'development') {
+                            echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
+                        }
+    
+                        Logger()->error($error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage());
+                    }    		
+                };
+            }
     
             // Start Event Loop
             Worker::runAll();

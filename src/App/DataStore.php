@@ -37,6 +37,10 @@ function DataStore(): DataStore
 {
     static $dataStore;
     
+    /**
+     * No need to check for an open connection and reconnect since it's handled internally
+     * @see https://github.com/doctrine/dbal/pull/4966#issuecomment-1015006379
+     */
     $dataStore ??= new class() extends EntityManagerDecorator implements DataStore {
         public function __construct() {
             $entityManagerConfig = ORMSetup::createAttributeMetadataConfiguration(
@@ -73,40 +77,6 @@ function DataStore(): DataStore
                 );
         }
     };
-
-    /**
-     * Reset the EntityManager if closed
-     * Doctrine closes the EntityManager on some Exceptions
-     */
-    if (!$dataStore->isOpen()) {
-        $dataStore = new class(
-            closed: $dataStore 
-        ) extends EntityManagerDecorator implements DataStore {
-            public function __construct(
-                EntityManagerDecorator $closed
-            ) {
-                parent::__construct(
-                    wrapped: new EntityManager(
-                        /**
-                         * No need to check for an open connection since it's handled internally
-                         * @see https://github.com/doctrine/dbal/pull/4966#issuecomment-1015006379
-                         */
-                        conn: $closed->getConnection(),
-                        config: $closed->getConfiguration(),
-                        eventManager: $closed->getEventManager()
-                    )
-                );
-            }
-
-            public function find($className, $id, $lockMode = null, $lockVersion = null): object
-            {
-                return parent::find($className, $id, $lockMode, $lockVersion)
-                    ?? throw new \Exception(
-                        "The $className entity with id '$id' was not found."
-                    );
-            }
-        };
-    }
 
     return $dataStore;
 }
