@@ -61,12 +61,12 @@ final class Request
         $uri = $request->uri();
         $method = $request->method();
 
-        assert(\is_array($headers), new \Exception('Error resolving Workerman request headers.'));
-        assert(\is_array($files), new \Exception('Error resolving Workerman request files.'));
-        assert(\is_array($queryParams), new \Exception('Error resolving Workerman request query params.'));
-        assert(\is_array($cookieParams), new \Exception('Error resolving Workerman request cookie params.'));
-        assert(\is_string($uri), new \Exception('Error resolving Workerman request uri.'));
-        assert(\is_string($method), new \Exception('Error resolving Workerman request method.'));
+        \assert(\is_array($headers), new \Exception('Error resolving Workerman request headers.'));
+        \assert(\is_array($files), new \Exception('Error resolving Workerman request files.'));
+        \assert(\is_array($queryParams), new \Exception('Error resolving Workerman request query params.'));
+        \assert(\is_array($cookieParams), new \Exception('Error resolving Workerman request cookie params.'));
+        \assert(\is_string($uri), new \Exception('Error resolving Workerman request uri.'));
+        \assert(\is_string($method), new \Exception('Error resolving Workerman request method.'));
 
         $this->protocolVersion = '1.1';
         $this->uri = new URI($uri);

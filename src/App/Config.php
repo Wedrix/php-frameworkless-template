@@ -883,7 +883,7 @@ function Config(): Config
 
         public function authKeyLength(): int
         {
-            assert($this->authKeyLength > 0, new \Exception('Invalid authorization key length'));
+            \assert($this->authKeyLength > 0, new \Exception('Invalid authorization key length'));
 
             return $this->authKeyLength;
         }
@@ -930,7 +930,7 @@ function Config(): Config
 
         public function accessControlUserContextKeyLength(): int
         {
-            assert($this->accessControlUserContextKeyLength > 0, new \Exception('Invalid user context key length'));
+            \assert($this->accessControlUserContextKeyLength > 0, new \Exception('Invalid user context key length'));
 
             return $this->accessControlUserContextKeyLength;
         }

@@ -75,7 +75,7 @@ namespace
                     ) {
                         $emailTemplatesDirectory = (string) Config()->emailTemplatesDirectory();
 
-                        assert(!empty($emailTemplatesDirectory), new \Exception('Empty emailTemplatesDirectory!'));
+                        \assert(!empty($emailTemplatesDirectory), new \Exception('Empty emailTemplatesDirectory!'));
 
                         TwigTemplateEngine()->load(
                             name: \explode($emailTemplatesDirectory, $templateFile->getPathname())[1]

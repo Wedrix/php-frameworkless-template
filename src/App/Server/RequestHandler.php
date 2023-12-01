@@ -597,7 +597,7 @@ namespace App\Server\RequestHandler
     {
         $requestAuthorizationHeader = requestAuthorizationHeader($request);
 
-        assert(
+        \assert(
             \is_null($requestAuthorizationHeader) || !empty($requestAuthorizationHeader), 
             new \Exception('Invalid \'Authorization\' header!')
         );
@@ -616,7 +616,7 @@ namespace App\Server\RequestHandler
     {
         $requestReauthorizationHeader = requestReauthorizationHeader($request);
 
-        assert(
+        \assert(
             \is_null($requestReauthorizationHeader) || !empty($requestReauthorizationHeader), 
             new \Exception('Invalid \'Reauthorization\' header!')
         );
