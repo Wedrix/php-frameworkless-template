@@ -359,7 +359,7 @@ final class URI
     {
         return (string) \preg_replace_callback(
             $pattern,
-            static fn (array $matches) => \rawurlencode($matches[0]),
+            static fn(array $matches) => \rawurlencode($matches[0]),
             $string,
         );
     }

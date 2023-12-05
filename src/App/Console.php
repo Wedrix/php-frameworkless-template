@@ -20,7 +20,7 @@ function Console(): Console
 {
     static $console;
     
-    $console ??= (static function (): Console {
+    $console ??= (static function(): Console {
         $console = new Console(
             name: Config()->appName(),
             version: Config()->appVersion()

@@ -14,7 +14,7 @@ function Logger(): Logger
 {
     static $logger;
     
-    $logger ??= (static function (): Logger {
+    $logger ??= (static function(): Logger {
         $formatter = new LineFormatter("\n%datetime% >> %channel%:%level_name% >> %message%", "Y-m-d H:i:s");
         $stream = new StreamHandler(Config()->serverLogFileDirectory().'/'.Config()->serverLogFileName());
         $stream->setFormatter($formatter);

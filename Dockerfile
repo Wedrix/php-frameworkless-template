@@ -33,6 +33,8 @@ RUN printf "\n" | curl 'https://pecl.php.net/get/amqp-2.0.0.tgz' -o amqp-2.0.0.t
     rm -rf /tmp/pear && \
     echo "extension=amqp.so" > /etc/php/8.2/cli/conf.d/amqp.ini
 
+RUN sed -i "s|opcache.jit=off|opcache.jit=function|g" /etc/php/8.2/cli/conf.d/10-opcache.ini
+
 COPY php.ini /etc/php/8.2/cli/php.ini
 
 COPY install-composer.sh ./

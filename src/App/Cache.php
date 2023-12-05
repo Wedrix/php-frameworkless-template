@@ -10,7 +10,7 @@ function Cache(): CacheItemPoolInterface
 {
     static $cache;
     
-    $cache ??= (static function (): CacheItemPoolInterface {
+    $cache ??= (static function(): CacheItemPoolInterface {
         $redis = new \Redis();
 
         $redis->connect(Config()->redisHost(), Config()->redisPort());

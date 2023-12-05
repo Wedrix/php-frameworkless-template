@@ -33,7 +33,7 @@ function AddPluginWatchtowerCommand(): Command
                 throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
             }
             
-            $pluginType = (function () use ($input, $output): string {
+            $pluginType = (function() use ($input, $output): string {
                 $helper = $this->getHelper('question');
     
                 if (!$helper instanceof QuestionHelper) {
@@ -50,7 +50,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'filter') {
                 WatchtowerConsole()->addFilterPlugin(
-                    parentNodeType: (function () use ($input, $output): string {
+                    parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -61,7 +61,7 @@ function AddPluginWatchtowerCommand(): Command
                             question: "What's the parent node type? "
                         ));
                     })(),
-                    filterName: (function () use ($input, $output): string {
+                    filterName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
         
                         if (!$helper instanceof QuestionHelper) {
@@ -77,7 +77,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'ordering') {
                 WatchtowerConsole()->addOrderingPlugin(
-                    parentNodeType: (function () use ($input, $output): string {
+                    parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -88,7 +88,7 @@ function AddPluginWatchtowerCommand(): Command
                             question: "What's the parent node type? "
                         ));
                     })(),
-                    orderingName: (function () use ($input, $output): string {
+                    orderingName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
         
                         if (!$helper instanceof QuestionHelper) {
@@ -104,7 +104,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'selector') {
                 WatchtowerConsole()->addSelectorPlugin(
-                    parentNodeType: (function () use ($input, $output): string {
+                    parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -115,7 +115,7 @@ function AddPluginWatchtowerCommand(): Command
                             question: "What's the parent node type? "
                         ));
                     })(),
-                    fieldName: (function () use ($input, $output): string {
+                    fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -131,7 +131,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'resolver') {
                 WatchtowerConsole()->addResolverPlugin(
-                    parentNodeType: (function () use ($input, $output): string {
+                    parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -142,7 +142,7 @@ function AddPluginWatchtowerCommand(): Command
                             question: "What's the parent node type? "
                         ));
                     })(),
-                    fieldName: (function () use ($input, $output): string {
+                    fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -158,7 +158,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'authorizor') {
                 WatchtowerConsole()->addAuthorizorPlugin(
-                    nodeType: $nodeType = (function () use ($input, $output): string {
+                    nodeType: $nodeType = (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
         
                         if (!$helper instanceof QuestionHelper) {
@@ -169,7 +169,7 @@ function AddPluginWatchtowerCommand(): Command
                             question: "What's the node type? "
                         ));
                     })(),
-                    isForCollections: (function () use ($input, $output, $nodeType): bool {
+                    isForCollections: (function() use ($input, $output, $nodeType): bool {
                         $helper = $this->getHelper('question');
         
                         if (!$helper instanceof QuestionHelper) {
@@ -185,7 +185,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'mutation') {
                 WatchtowerConsole()->addMutationPlugin(
-                    fieldName: (function () use ($input, $output): string {
+                    fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {
@@ -201,7 +201,7 @@ function AddPluginWatchtowerCommand(): Command
     
             if ($pluginType === 'subscription') {
                 WatchtowerConsole()->addSubscriptionPlugin(
-                    fieldName: (function () use ($input, $output): string {
+                    fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
                         if (!$helper instanceof QuestionHelper) {

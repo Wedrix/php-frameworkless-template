@@ -10,7 +10,7 @@ function Encrypter(): BlockCipher
 {
     static $encrypter;
     
-    $encrypter ??= (static function (): BlockCipher {
+    $encrypter ??= (static function(): BlockCipher {
         $encrypter = BlockCipher::factory('openssl', ['algo' => 'aes']);
 
         $encrypter->setKey(Config()->authEncryptionKey());

@@ -36,7 +36,7 @@ function ListPluginsWatchtowerCommand(): Command
         
                 $styledOutput->table(
                     ['<comment>Type</comment>', '<comment>Name</comment>'],
-                    (function (): array {
+                    (static function(): array {
                         $results = [];
                         $parsedPluginTypes = [];
         

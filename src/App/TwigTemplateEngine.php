@@ -11,7 +11,7 @@ function TwigTemplateEngine(): Environment
 {
     static $twigTemplateEngine;
     
-    $twigTemplateEngine ??= (static function () {
+    $twigTemplateEngine ??= (static function() {
         return new Environment(
             loader: new FilesystemLoader((string) Config()->emailTemplatesDirectory()), 
             options: [

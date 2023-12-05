@@ -73,7 +73,7 @@ function TaskQueue(): TaskQueue
         {
             $this->queue
                 ->consume(
-                    callback: static function (\AMQPEnvelope $message, \AMQPQueue $queue) {
+                    callback: static function(\AMQPEnvelope $message, \AMQPQueue $queue) {
                         $task = \unserialize($message->getBody())->getClosure();
             
                         $task();

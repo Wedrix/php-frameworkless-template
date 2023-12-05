@@ -308,15 +308,15 @@ function Config(): Config
 
         public function __construct()
         {
-            $this->appBaseDirectory = DirectoryPath::{\dirname(__FILE__, 3)}();
+            $this->appBaseDirectory = $appBaseDirectory = DirectoryPath::{\dirname(__FILE__, 3)}();
 
-            Dotenv::createImmutable(paths: (string) $this->appBaseDirectory)->load();
+            Dotenv::createImmutable(paths: (string) $appBaseDirectory)->load();
 
-            $this->appHttpPhrases = require $this->appBaseDirectory.'/config/http_phrases.php';
+            $this->appHttpPhrases = require $appBaseDirectory.'/config/http_phrases.php';
 
-            $this->appUriSchemes = require $this->appBaseDirectory.'/config/uri_schemes.php';
+            $this->appUriSchemes = require $appBaseDirectory.'/config/uri_schemes.php';
     
-            $this->appEnvironment = (function (): string {
+            $this->appEnvironment = $appEnvironment = (static function(): string {
                 $appEnvironment =  $_ENV['APP_ENVIRONMENT'] ?? throw new \Exception(
                     message: 'The App environment is not set. Try adding \'APP_ENVIRONMENT\' to the .env file.'
                 );
@@ -332,8 +332,8 @@ function Config(): Config
                 message: 'The App name is not set. Try adding \'APP_NAME\' to the .env file.'
             );
     
-            $this->appVersion = (function (): string {
-                $composerFileDirectory = $this->appBaseDirectory.'/composer.json';
+            $this->appVersion = (static function() use($appBaseDirectory): string {
+                $composerFileDirectory = $appBaseDirectory.'/composer.json';
     
                 $composerData = \json_decode(
                     \file_get_contents($composerFileDirectory) 
@@ -359,7 +359,7 @@ function Config(): Config
 
             $this->serverHost = $_ENV['SERVER_HOST'] ?? '0.0.0.0';
     
-            $this->serverPort = (function (): int {
+            $this->serverPort = (static function(): int {
                 $port =  $_ENV['SERVER_PORT'] ?? '80';
         
                 if(!\ctype_digit($port)) {
@@ -369,13 +369,13 @@ function Config(): Config
                 return (int) $port;
             })();
     
-            $this->serverLogFileDirectory = (function (): DirectoryPath {
+            $this->serverLogFileDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $serverLogFileDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['SERVER_LOG_FILE_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Server log file directory is not set. Try adding \'SERVER_LOG_FILE_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $serverLogFileDirectory)) {
@@ -399,7 +399,7 @@ function Config(): Config
                 message: 'The Auth signing algorithm is not set. Try adding \'AUTH_SIGNING_ALGORITHM\' to the .env file.'
             );
     
-            $this->authAccessTokenTTLInMinutes = (function (): int {
+            $this->authAccessTokenTTLInMinutes = (static function(): int {
                 $ttl = $_ENV['AUTH_ACCESS_TOKEN_TTL_MINUTES'] ?? throw new \Exception(
                     message: 'The Auth access token time-to-live is not set. Try adding \'AUTH_ACCESS_TOKEN_TTL_MINUTES\' to the .env file.'
                 );
@@ -411,7 +411,7 @@ function Config(): Config
                 return (int) $ttl;
             })();
     
-            $this->authRefreshTokenTTLInMinutes = (function (): int {
+            $this->authRefreshTokenTTLInMinutes = (static function(): int {
                 $ttl = $_ENV['AUTH_REFRESH_TOKEN_TTL_MINUTES'] ?? throw new \Exception(
                     message: 'The Auth refresh token time-to-live is not set. Try adding \'AUTH_REFRESH_TOKEN_TTL_MINUTES\' to the .env file.'
                 );
@@ -431,7 +431,7 @@ function Config(): Config
                 message: 'The Auth fingerprint hash algorithm is not set. Try adding \'AUTH_FINGERPRINT_HASH_ALGORITHM\' to the .env file.'
             );
 
-            $this->authKeyLength = (function (): int {
+            $this->authKeyLength = (static function(): int {
                 $ttl = $_ENV['AUTH_KEY_LENGTH'] ?? throw new \Exception(
                     message: 'The Auth key length is not set. Try adding \'AUTH_KEY_LENGTH\' to the .env file.'
                 );
@@ -443,7 +443,7 @@ function Config(): Config
                 return (int) $ttl;
             })();
 
-            $this->accessControlMaxQueryDepth = (function (): int {
+            $this->accessControlMaxQueryDepth = (static function(): int {
                 $signUpTokenLimit = $_ENV['ACCESS_CONTROL_MAX_QUERY_DEPTH'] ?? throw new \Exception(
                     message: 'The Access Control Max Query Depth is not set. Try adding \'ACCESS_CONTROL_MAX_QUERY_DEPTH\' to the .env file.'
                 );
@@ -463,7 +463,7 @@ function Config(): Config
                 message: 'The Access Control allowed headers is not set. Try adding \'ACCESS_CONTROL_ALLOWED_HEADERS\' to the .env file.'
             ));
     
-            $this->accessControlAllowedMethods = (function (): array {
+            $this->accessControlAllowedMethods = (static function(): array {
                 $allowedMethods = \explode(',', $_ENV['ACCESS_CONTROL_ALLOWED_METHODS'] ?? throw new \Exception(
                     message: 'The Access Control allowed methods is not set. Try adding \'ACCESS_CONTROL_ALLOWED_METHODS\' to the .env file.'
                 ));
@@ -477,7 +477,7 @@ function Config(): Config
                 return $allowedMethods;
             })();
     
-            $this->accessControlExposeHeaders = (function (): array {
+            $this->accessControlExposeHeaders = (static function(): array {
                 $exposeHeaders = $_ENV['ACCESS_CONTROL_EXPOSE_HEADERS'];
         
                 if (!\is_null($exposeHeaders)) {
@@ -489,7 +489,7 @@ function Config(): Config
     
             $this->accessControlAllowCredentials = $_ENV['ACCESS_CONTROL_ALLOW_CREDENTIALS'] === 'true';
     
-            $this->accessControlApiAccessLimit = (function (): int {
+            $this->accessControlApiAccessLimit = (static function(): int {
                 $apiAccessLimit = $_ENV['ACCESS_CONTROL_API_ACCESS_LIMIT'] ?? throw new \Exception(
                     message: 'The Access Control api access limit is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_LIMIT\' to the .env file.'
                 );
@@ -501,7 +501,7 @@ function Config(): Config
                 return (int) $apiAccessLimit;
             })();
     
-            $this->accessControlApiAccessWindowSizeInSeconds = (function (): int {
+            $this->accessControlApiAccessWindowSizeInSeconds = (static function(): int {
                 $apiAccessWindowSizeInSeconds = $_ENV['ACCESS_CONTROL_API_ACCESS_WINDOW_SIZE_IN_SECONDS'] ?? throw new \Exception(
                     message: 'The Access Control api access window is not set. Try adding \'ACCESS_CONTROL_API_ACCESS_WINDOW_SIZE_IN_SECONDS\' to the .env file.'
                 );
@@ -513,7 +513,7 @@ function Config(): Config
                 return (int) $apiAccessWindowSizeInSeconds;
             })();
 
-            $this->accessControlUserContextKeyLength = (function (): int {
+            $this->accessControlUserContextKeyLength = (static function(): int {
                 $apiAccessLimit = $_ENV['ACCESS_CONTROL_USER_CONTEXT_KEY_LENGTH'] ?? throw new \Exception(
                     message: 'The Access Control user context key length is not set. Try adding \'ACCESS_CONTROL_USER_CONTEXT_KEY_LENGTH\' to the .env file.'
                 );
@@ -525,11 +525,11 @@ function Config(): Config
                 return (int) $apiAccessLimit;
             })();
 
-            $this->databaseHost = $_ENV['DATABASE_HOST'] ?? throw new \Exception(
+            $this->databaseHost = $databaseHost = $_ENV['DATABASE_HOST'] ?? throw new \Exception(
                 message: 'The Database host is not set. Try adding \'DATABASE_HOST\' to the .env file.'
             );
     
-            $this->databasePort = (function (): int {
+            $this->databasePort = $databasePort = (static function(): int {
                 $port =  $_ENV['DATABASE_PORT'] ?? throw new \Exception(
                     message: 'The Database port is not set. Try adding \'DATABASE_PORT\' to the .env file.'
                 );
@@ -541,26 +541,26 @@ function Config(): Config
                 return (int) $port;
             })();
     
-            $this->databaseName = $_ENV['DATABASE_NAME'] ?? throw new \Exception(
+            $this->databaseName = $databaseName = $_ENV['DATABASE_NAME'] ?? throw new \Exception(
                 message: 'The Database name is not set. Try adding \'DATABASE_NAME\' to the .env file.'
             );
     
-            $this->databaseUser = $_ENV['DATABASE_USER'] ?? throw new \Exception(
+            $this->databaseUser = $databaseUser = $_ENV['DATABASE_USER'] ?? throw new \Exception(
                 message: 'The Database user is not set. Try adding \'DATABASE_USER\' to the .env file.'
             );
     
-            $this->databasePassword = $_ENV['DATABASE_PASSWORD'] ?? throw new \Exception(
+            $this->databasePassword = $databasePassword = $_ENV['DATABASE_PASSWORD'] ?? throw new \Exception(
                 message: 'The Database password is not set. Try adding \'DATABASE_PASSWORD\' to the .env file.'
             );
 
-            $this->doctrineModelsDirectories = (function (): DirectoryPaths {
+            $this->doctrineModelsDirectories = (static function() use($appBaseDirectory): DirectoryPaths {
                 $doctrineModelsDirectories = DirectoryPaths::{
                     \implode(
                         ',',
                         \array_map(
-                            fn(string $path) => \is_absolute_path($path)
+                            static fn(string $path) => \is_absolute_path($path)
                                 ? $path
-                                : $this->appBaseDirectory.'/'.$path,
+                                : $appBaseDirectory.'/'.$path,
                             \explode(
                                 ',',
                                 $_ENV['DOCTRINE_MODELS_DIRECTORIES'] ?? throw new \Exception(
@@ -582,7 +582,7 @@ function Config(): Config
                 return $doctrineModelsDirectories;
             })();
     
-            $this->doctrineDBDriver = (function (): string {
+            $this->doctrineDBDriver = $doctrineDBDriver = (static function(): string {
                 $driver = $_ENV['DOCTRINE_DB_DRIVER'] ?? throw new \Exception(
                     message: 'The Doctrine driver is not set. Try adding \'DOCTRINE_DB_DRIVER\' to the .env file.'
                 );
@@ -595,23 +595,23 @@ function Config(): Config
             })();
     
             $this->doctrineConnection = [
-                'driver' => $this->doctrineDBDriver,
-                'host' => $this->databaseHost,
-                'user' => $this->databaseUser,
-                'password' => $this->databasePassword,
-                'dbname' => $this->databaseName,
-                'port' => $this->databasePort,
+                'driver' => $doctrineDBDriver,
+                'host' => $databaseHost,
+                'user' => $databaseUser,
+                'password' => $databasePassword,
+                'dbname' => $databaseName,
+                'port' => $databasePort,
             ];
 
-            $this->doctrineIsDevMode = $this->appEnvironment === 'development';
+            $this->doctrineIsDevMode = ($appEnvironment === 'development');
     
-            $this->doctrineProxiesDirectory = (function (): DirectoryPath {
+            $this->doctrineProxiesDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $doctrineProxiesDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['DOCTRINE_PROXIES_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Doctrine proxies directory is not set. Try adding \'DOCTRINE_PROXIES_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $doctrineProxiesDirectory)) {
@@ -621,13 +621,13 @@ function Config(): Config
                 return $doctrineProxiesDirectory;
             })();
             
-            $this->watchtowerSchemaFileDirectory = (function (): DirectoryPath {
+            $this->watchtowerSchemaFileDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $watchtowerSchemaFileDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['WATCHTOWER_SCHEMA_FILE_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Watchtower schema file directory is not set. Try adding \'WATCHTOWER_SCHEMA_FILE_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $watchtowerSchemaFileDirectory)) {
@@ -643,13 +643,13 @@ function Config(): Config
                 )
             }();
     
-            $this->watchtowerCacheDirectory = (function (): DirectoryPath {
+            $this->watchtowerCacheDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $watchtowerCacheDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['WATCHTOWER_CACHE_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Watchtower schema cache directory is not set. Try adding \'WATCHTOWER_CACHE_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $watchtowerCacheDirectory)) {
@@ -659,13 +659,13 @@ function Config(): Config
                 return $watchtowerCacheDirectory;
             })();
     
-            $this->watchtowerPluginsDirectory = (function (): DirectoryPath {
+            $this->watchtowerPluginsDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $watchtowerPluginsDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['WATCHTOWER_PLUGINS_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Watchtower plugins directory is not set. Try adding \'WATCHTOWER_PLUGINS_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $watchtowerPluginsDirectory)) {
@@ -675,13 +675,13 @@ function Config(): Config
                 return $watchtowerPluginsDirectory;
             })();
     
-            $this->watchtowerScalarTypeDefinitionsDirectory = (function (): DirectoryPath {
+            $this->watchtowerScalarTypeDefinitionsDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $watchtowerScalarTypeDefinitionsDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['WATCHTOWER_SCALAR_TYPE_DEFINITIONS_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Watchtower scalar type definitions directory is not set. Try adding \'WATCHTOWER_SCALAR_TYPE_DEFINITIONS_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $watchtowerScalarTypeDefinitionsDirectory)) {
@@ -691,13 +691,13 @@ function Config(): Config
                 return $watchtowerScalarTypeDefinitionsDirectory;
             })();
 
-            $this->emailTemplatesDirectory = (function (): DirectoryPath {
+            $this->emailTemplatesDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $emailTemplatesDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['EMAIL_TEMPLATES_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Email templates directory is not set. Try adding \'EMAIL_TEMPLATES_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $emailTemplatesDirectory)) {
@@ -707,13 +707,13 @@ function Config(): Config
                 return $emailTemplatesDirectory;
             })();
     
-            $this->emailTemplatesCacheDirectory = (function (): DirectoryPath {
+            $this->emailTemplatesCacheDirectory = (static function() use($appBaseDirectory): DirectoryPath {
                 $emailTemplatesCacheDirectory = DirectoryPath::{
                     \is_absolute_path($path = $_ENV['EMAIL_TEMPLATES_CACHE_DIRECTORY'] ?? throw new \Exception(
                         message: 'The Email templates cache directory is not set. Try adding \'EMAIL_TEMPLATES_CACHE_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
-                    : $this->appBaseDirectory.'/'.$path
+                    : $appBaseDirectory.'/'.$path
                 }();
 
                 if (!\is_dir((string) $emailTemplatesCacheDirectory)) {
@@ -731,7 +731,7 @@ function Config(): Config
                 message: 'The RabbitMQ host is not set. Try adding \'RABBITMQ_HOST\' to the .env file.'
             );
     
-            $this->rabbitMQPort = (function (): int {
+            $this->rabbitMQPort = (static function(): int {
                 $port =  $_ENV['RABBITMQ_PORT'] ?? throw new \Exception(
                     message: 'The RabbitMQ port is not set. Try adding \'RABBITMQ_PORT\' to the .env file.'
                 );
@@ -755,7 +755,7 @@ function Config(): Config
                 message: 'The Redis host is not set. Try adding \'REDIS_HOST\' to the .env file.'
             );
     
-            $this->redisPort = (function (): int {
+            $this->redisPort = (static function(): int {
                 $port =  $_ENV['REDIS_PORT'] ?? throw new \Exception(
                     message: 'The Redis port is not set. Try adding \'REDIS_PORT\' to the .env file.'
                 );

@@ -31,7 +31,7 @@ function AddScalarTypeDefinitionWatchtowerCommand(): Command
                 throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
             }
             
-            $typeName = (function () use ($input, $output): string {
+            $typeName = (function() use ($input, $output): string {
                 $helper = $this->getHelper('question');
     
                 if (!$helper instanceof QuestionHelper) {

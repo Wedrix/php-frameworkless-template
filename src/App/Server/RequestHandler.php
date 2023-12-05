@@ -546,7 +546,7 @@ namespace App\Server\RequestHandler
             if ($proceedToCheckProxyHeaders) {
                 foreach ($headersToInspect as $header) {
                     if ($request->hasHeader($header)) {
-                        $ip = (static function () use($request, $header): string {
+                        $ip = (static function() use($request, $header): string {
                             $items = \explode(',', $request->headerLine($header));
                             $headerValue = \trim(\reset($items));
                     
@@ -667,7 +667,7 @@ namespace App\Server\RequestHandler
         // Filter user accesses where timestamps < current timestamp - access window size in seconds
         $userAccesses = \array_filter(
             $userAccesses,
-            fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - Config()->accessControlApiAccessWindowSizeInSeconds())
+            static fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - Config()->accessControlApiAccessWindowSizeInSeconds())
         );
 
         // Save filtered user accesses

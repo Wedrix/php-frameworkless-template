@@ -35,7 +35,7 @@ function ListScalarTypeDefinitionsWatchtowerCommand(): Command
         
                 $styledOutput->table(
                     ['<comment>Type Name</comment>', '<comment>File</comment>'],
-                    (function (): array {
+                    (static function(): array {
                         $results = [];
         
                         foreach (WatchtowerConsole()->scalarTypeDefinitions() as $scalarTypeDefinition) {

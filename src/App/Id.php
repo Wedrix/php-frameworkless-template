@@ -45,4 +45,12 @@ final class Id
     {
         return $idA->value === $idB->value;
     }
+
+    public static function different(
+        self $idA,
+        self $idB
+    ): bool
+    {
+        return $idA->value !== $idB->value;
+    }
 }

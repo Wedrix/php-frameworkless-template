@@ -45,4 +45,12 @@ final class Text
     {
         return $textA->value === $textB->value;
     }
+
+    public static function different(
+        self $textA,
+        self $textB
+    ): bool
+    {
+        return $textA->value !== $textB->value;
+    }
 }
