@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Console;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -13,14 +12,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 use function App\WatchtowerConsole;
 
-function ListPluginsWatchtowerCommand(): Command
+function ListWatchtowerScalarTypeDefinitionsCommand(): Command
 {
     static $command;
     
     $command ??= new class() extends Command {
-        protected static $defaultName = 'watchtower:plugins:list';
+        protected static $defaultName = 'watchtower:scalar-type-definitions:list';
         
-        protected static $defaultDescription = 'Lists all the project\'s plugins.';
+        protected static $defaultDescription = 'Lists all the project\'s scalar type definitions.';
     
         public function execute(
             InputInterface $input,
@@ -31,30 +30,19 @@ function ListPluginsWatchtowerCommand(): Command
                 throw new \Exception('This command accepts only an instance of "ConsoleOutputInterface".');
             }
     
-            if (\iterator_count(WatchtowerConsole()->plugins()) > 0) {
+            if (\iterator_count(WatchtowerConsole()->scalarTypeDefinitions()) > 0) {
                 $styledOutput = new SymfonyStyle($input, $output);
         
                 $styledOutput->table(
-                    ['<comment>Type</comment>', '<comment>Name</comment>'],
+                    ['<comment>Type Name</comment>', '<comment>File</comment>'],
                     (static function(): array {
                         $results = [];
-                        $parsedPluginTypes = [];
         
-                        foreach (WatchtowerConsole()->plugins() as $plugin) {
-                            if (!\in_array($plugin->type(), $parsedPluginTypes) && !empty($parsedPluginTypes)) {
-                                $results[] = new TableSeparator();
-                            }
-        
+                        foreach (WatchtowerConsole()->scalarTypeDefinitions() as $scalarTypeDefinition) {
                             $results[] = [
-                                \in_array($plugin->type(), $parsedPluginTypes)
-                                ? '' 
-                                : '<info>'.\capitalize($plugin->type()).'</info>',
-                                $plugin->name()
+                                $scalarTypeDefinition->typeName(),
+                                WatchtowerConsole()->scalarTypeDefinitions()->filePath($scalarTypeDefinition)
                             ];
-        
-                            if (!\in_array($plugin->type(), $parsedPluginTypes)) {
-                                $parsedPluginTypes[] = $plugin->type();
-                            }
                         }
         
                         return $results;
@@ -62,7 +50,7 @@ function ListPluginsWatchtowerCommand(): Command
                 );
             }
             else {
-                $output->writeln('<info>You have no plugins.</info>');
+                $output->writeln('<info>You have no scalar type definitions.</info>');
             }
     
             return Command::SUCCESS;

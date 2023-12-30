@@ -8,9 +8,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function App\WatchtowerConsole;
+use function App\SysAdmin;
 
-function UpdateSchemaWatchtowerCommand(): Command
+function UpdateWatchtowerSchemaCommand(): Command
 {
     static $command;
     
@@ -24,7 +24,11 @@ function UpdateSchemaWatchtowerCommand(): Command
             OutputInterface $output
         ): int
         {
-            WatchtowerConsole()->updateSchema();
+            $output->writeln("<info>Updating Schema ...</info>");
+    
+            SysAdmin()->updateWatchtowerSchema();
+            
+            $output->writeln("<info>Done!</info>");
                 
             return Command::SUCCESS;
         }

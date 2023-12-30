@@ -111,13 +111,15 @@ function Server(): Server
                     $connection->send($response);
                 } 
                 catch (\Throwable $error) {
+                    $errorMessage = "\r\n[REQUEST ERROR] $error\r\n";
+
                     if (Config()->appEnvironment() === 'development') {
-                        echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
+                        echo $errorMessage;
                     }
 
-                    Logger()->error($error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage());
+                    Logger()->log($errorMessage);
 
-                    $connection->send(new Response());
+                    $connection->send(new Response(500));
                 }
             };
     
@@ -143,11 +145,13 @@ function Server(): Server
                         } 
                     } 
                     catch (\Throwable $error) {
+                        $errorMessage = "\r\n[JOB ERROR] $error\r\n";
+
                         if (Config()->appEnvironment() === 'development') {
-                            echo "\n[ERR] " . $error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage();
+                            echo $errorMessage;
                         }
     
-                        Logger()->error($error->getFile() . ':' . $error->getLine() . ' >> ' . $error->getMessage());
+                        Logger()->log($errorMessage);
                     }    		
                 };
             }

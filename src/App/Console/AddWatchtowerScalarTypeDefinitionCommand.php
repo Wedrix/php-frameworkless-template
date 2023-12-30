@@ -11,9 +11,9 @@ use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
-use function App\WatchtowerConsole;
+use function App\SysAdmin;
 
-function AddScalarTypeDefinitionWatchtowerCommand(): Command
+function AddWatchtowerScalarTypeDefinitionCommand(): Command
 {
     static $command;
     
@@ -43,7 +43,7 @@ function AddScalarTypeDefinitionWatchtowerCommand(): Command
                 ));
             })();
     
-            WatchtowerConsole()->addScalarTypeDefinition(
+            SysAdmin()->addWatchtowerScalarTypeDefinition(
                 typeName: $typeName
             );
     

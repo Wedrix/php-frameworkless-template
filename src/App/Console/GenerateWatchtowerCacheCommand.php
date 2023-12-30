@@ -8,25 +8,25 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use function App\WatchtowerConsole;
+use function App\SysAdmin;
 
-function GenerateSchemaWatchtowerCommand(): Command
+function GenerateWatchtowerCacheCommand(): Command
 {
     static $command;
     
     $command ??= new class() extends Command {
-        protected static $defaultName = 'watchtower:schema:generate';
+        protected static $defaultName = 'watchtower:cache:generate';
         
-        protected static $defaultDescription = 'Generate the schema file.';
+        protected static $defaultDescription = 'Generate and update the cache.';
     
         public function execute(
             InputInterface $input,
             OutputInterface $output
         ): int
         {
-            $output->writeln("<info>Generating Schema ...</info>");
+            $output->writeln("<info>Generating Cache ...</info>");
     
-            WatchtowerConsole()->generateSchema();
+            SysAdmin()->generateWatchtowerCache();
             
             $output->writeln("<info>Done!</info>");
                 

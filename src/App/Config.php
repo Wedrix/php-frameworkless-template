@@ -36,9 +36,7 @@ interface Config
 
     public function serverPort(): int;
 
-    public function serverLogFileDirectory(): DirectoryPath;
-
-    public function serverLogFileName(): FileName;
+    public function serverLogFilesDirectory(): DirectoryPath;
     
     public function authSigningKey(): string;
 
@@ -191,9 +189,7 @@ function Config(): Config
     
         private readonly int $serverPort;
     
-        private readonly DirectoryPath $serverLogFileDirectory;
-
-        private readonly FileName $serverLogFileName;
+        private readonly DirectoryPath $serverLogFilesDirectory;
 
         private readonly string $authSigningKey;
     
@@ -369,27 +365,21 @@ function Config(): Config
                 return (int) $port;
             })();
     
-            $this->serverLogFileDirectory = (static function() use($appBaseDirectory): DirectoryPath {
-                $serverLogFileDirectory = DirectoryPath::{
-                    \is_absolute_path($path = $_ENV['SERVER_LOG_FILE_DIRECTORY'] ?? throw new \Exception(
-                        message: 'The Server log file directory is not set. Try adding \'SERVER_LOG_FILE_DIRECTORY\' to the .env file.'
+            $this->serverLogFilesDirectory = (static function() use($appBaseDirectory): DirectoryPath {
+                $serverLogFilesDirectory = DirectoryPath::{
+                    \is_absolute_path($path = $_ENV['SERVER_LOG_FILES_DIRECTORY'] ?? throw new \Exception(
+                        message: 'The Server log files directory is not set. Try adding \'SERVER_LOG_FILES_DIRECTORY\' to the .env file.'
                     ))
                     ? $path
                     : $appBaseDirectory.'/'.$path
                 }();
 
-                if (!\is_dir((string) $serverLogFileDirectory)) {
-                    throw new \Exception("The Server log file directory '$serverLogFileDirectory' does not exist. Kindly create it.");
+                if (!\is_dir((string) $serverLogFilesDirectory)) {
+                    throw new \Exception("The Server log files directory '$serverLogFilesDirectory' does not exist. Kindly create it.");
                 }
 
-                return $serverLogFileDirectory;
+                return $serverLogFilesDirectory;
             })();
-
-            $this->serverLogFileName = FileName::{
-                $_ENV['SERVER_LOG_FILE_NAME'] ?? throw new \Exception(
-                    message: 'The Server log file name is not set. Try adding \'SERVER_LOG_FILE_NAME\' to the .env file.'
-                )
-            }();
             
             $this->authSigningKey = $_ENV['AUTH_SIGNING_KEY'] ?? throw new \Exception(
                 message: 'The Auth signing key is not set. Try adding \'AUTH_SIGNING_KEY\' to the .env file.'
@@ -841,14 +831,9 @@ function Config(): Config
             return $this->serverPort;
         }
     
-        public function serverLogFileDirectory(): DirectoryPath
+        public function serverLogFilesDirectory(): DirectoryPath
         {
-            return $this->serverLogFileDirectory;
-        }
-
-        public function serverLogFileName(): FileName
-        {
-            return $this->serverLogFileName;
+            return $this->serverLogFilesDirectory;
         }
     
         public function authSigningKey(): string

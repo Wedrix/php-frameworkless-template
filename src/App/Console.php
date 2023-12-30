@@ -8,13 +8,14 @@ use Doctrine\ORM\Tools\Console\EntityManagerProvider\ConnectionFromManagerProvid
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 use Symfony\Component\Console\Application as Console;
 
-use function App\Console\AddPluginWatchtowerCommand;
-use function App\Console\AddScalarTypeDefinitionWatchtowerCommand;
-use function App\Console\GenerateCacheWatchtowerCommand;
-use function App\Console\GenerateSchemaWatchtowerCommand;
-use function App\Console\ListPluginsWatchtowerCommand;
-use function App\Console\ListScalarTypeDefinitionsWatchtowerCommand;
-use function App\Console\UpdateSchemaWatchtowerCommand;
+use function App\Console\AddWatchtowerPluginCommand;
+use function App\Console\AddWatchtowerScalarTypeDefinitionCommand;
+use function App\Console\ClearServerLogsCommand;
+use function App\Console\GenerateWatchtowerCacheCommand;
+use function App\Console\GenerateWatchtowerSchemaCommand;
+use function App\Console\ListWatchtowerPluginsCommand;
+use function App\Console\ListWatchtowerScalarTypeDefinitionsCommand;
+use function App\Console\UpdateWatchtowerSchemaCommand;
 
 function Console(): Console
 {
@@ -50,15 +51,17 @@ function Console(): Console
             new \Doctrine\ORM\Tools\Console\Command\MappingDescribeCommand($entityManagerProvider),
 
             // Watchtower Commands
-            AddPluginWatchtowerCommand(),
-            ListPluginsWatchtowerCommand(),
-            GenerateSchemaWatchtowerCommand(),
-            UpdateSchemaWatchtowerCommand(),
-            AddScalarTypeDefinitionWatchtowerCommand(),
-            ListScalarTypeDefinitionsWatchtowerCommand(),
-            GenerateCacheWatchtowerCommand(),
+            AddWatchtowerPluginCommand(),
+            ListWatchtowerPluginsCommand(),
+            GenerateWatchtowerSchemaCommand(),
+            UpdateWatchtowerSchemaCommand(),
+            AddWatchtowerScalarTypeDefinitionCommand(),
+            ListWatchtowerScalarTypeDefinitionsCommand(),
+            GenerateWatchtowerCacheCommand(),
 
-            //TODO: ... commands go here
+            // Add Commands
+            ClearServerLogsCommand(),
+            //TODO: ... other commands go here
         ]);
 
         return $console;

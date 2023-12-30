@@ -56,7 +56,9 @@ namespace App\Server
 
                 // Check Rate Limiting
                 if (ipAddressAPIRateLimitExceeded(ipAddress: $request->attribute(Config()->ipAddressParserAttributeName()))) {
-                    throw new \Exception('Rate limit exceeded.');
+                    $response->setStatus(429);
+
+                    return;
                 }
 
                 // Attach CORS Headers
@@ -85,11 +87,15 @@ namespace App\Server
                     !\is_null($accessToken = requestAccessToken($request)) && !\is_null($userContext = requestUserContext($request))
                 ) {
                     if (!accessTokenAuthenticatesRequest(accessToken: $accessToken, request: $request)) {
-                        throw new \Exception('The request could not be authenticated!');
+                        $response->setStatus(401);
+
+                        return;
                     }
     
                     if (!\is_null($refreshToken = requestRefreshToken($request)) && !refreshTokenAuthenticatesRequest(refreshToken: $refreshToken, request: $request)) {
-                        throw new \Exception('The request could not be authenticated!');
+                        $response->setStatus(401);
+
+                        return;
                     }
                 
                     SessionOfUser::associate(
@@ -133,8 +139,8 @@ namespace App\Server
                     $response->body()
                             ->write(
                                 \is_string(
-                                    $graphQLResult = \json_encode(
-                                        WatchtowerExecutor()->executeQuery(
+                                    $responseBody = \json_encode(
+                                        ($graphQLResult = WatchtowerExecutor()->executeQuery(
                                             source: $input['query'] ?? throw new \Exception('Empty query.'),
                                             rootValue: [],
                                             contextValue: [
@@ -144,26 +150,28 @@ namespace App\Server
                                             variableValues: $input['variables'] ?? null,
                                             operationName: $input['operationName'] ?? null,
                                             validationRules: null
-                                        )
+                                        ))
                                         ->toArray(
-                                            debug: (Config()->appEnvironment() === 'development')
-                                                ? DebugFlag::INCLUDE_DEBUG_MESSAGE | DebugFlag::INCLUDE_TRACE
-                                                : DebugFlag::NONE
+                                            DebugFlag::RETHROW_UNSAFE_EXCEPTIONS
                                         )
                                     )
                                 ) 
-                                ? $graphQLResult
+                                ? $responseBody
                                 : throw new \Exception('Error evaluating GraphQL result.')
                             );
                     
                     $response->setHeader('Content-Type', 'application/json; charset=utf-8');
 
-                    // Clear Data Store
-                    DataStore()->clear();
+                    if (!empty($graphQLResult->errors) && ($response->statusCode() == 200)) {
+                        $response->setStatus(422);
+                    }
                 }
-                
+
                 // Dissociate Request from User
                 UserOfRequest::dissociate(user: $user, request: $request);
+
+                // Clear Data Store
+                DataStore()->clear();
             }
         };
     

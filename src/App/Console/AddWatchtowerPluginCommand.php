@@ -13,9 +13,9 @@ use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
 
-use function App\WatchtowerConsole;
+use function App\SysAdmin;
 
-function AddPluginWatchtowerCommand(): Command
+function AddWatchtowerPluginCommand(): Command
 {
     static $command;
     
@@ -49,7 +49,7 @@ function AddPluginWatchtowerCommand(): Command
             })();
     
             if ($pluginType === 'filter') {
-                WatchtowerConsole()->addFilterPlugin(
+                SysAdmin()->addWatchtowerFilterPlugin(
                     parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
@@ -76,7 +76,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'ordering') {
-                WatchtowerConsole()->addOrderingPlugin(
+                SysAdmin()->addWatchtowerOrderingPlugin(
                     parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
@@ -103,7 +103,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'selector') {
-                WatchtowerConsole()->addSelectorPlugin(
+                SysAdmin()->addWatchtowerSelectorPlugin(
                     parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
@@ -130,7 +130,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'resolver') {
-                WatchtowerConsole()->addResolverPlugin(
+                SysAdmin()->addWatchtowerResolverPlugin(
                     parentNodeType: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
@@ -157,7 +157,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'authorizor') {
-                WatchtowerConsole()->addAuthorizorPlugin(
+                SysAdmin()->addWatchtowerAuthorizorPlugin(
                     nodeType: $nodeType = (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
         
@@ -184,7 +184,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'mutation') {
-                WatchtowerConsole()->addMutationPlugin(
+                SysAdmin()->addWatchtowerMutationPlugin(
                     fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
@@ -200,7 +200,7 @@ function AddPluginWatchtowerCommand(): Command
             }
     
             if ($pluginType === 'subscription') {
-                WatchtowerConsole()->addSubscriptionPlugin(
+                SysAdmin()->addWatchtowerSubscriptionPlugin(
                     fieldName: (function() use ($input, $output): string {
                         $helper = $this->getHelper('question');
 
