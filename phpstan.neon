@@ -8,5 +8,9 @@ parameters:
 		- config
 		- src
 	doctrine:
-		objectManagerLoader: tests/DataStore.php
+		objectManagerLoader: tests/DoctrineEntityManager.php
 	rememberPossiblyImpureFunctionValues: false
+	exceptions:
+		uncheckedExceptionClasses:
+			- 'Throwable'	# Mark Throwable and child classes as unchecked
+		reportUncheckedExceptionDeadCatch: false

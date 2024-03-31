@@ -8,10 +8,7 @@ final class Password
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        //TODO: Validate value
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -26,8 +23,16 @@ final class Password
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \InvalidDataException('Invalid Password! The value cannot be empty.');
+        }
+        
+        //TODO: Validate value
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 }

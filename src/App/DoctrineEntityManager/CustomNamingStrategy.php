@@ -2,16 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\DataStore;
+namespace App\DoctrineEntityManager;
 
 use Doctrine\ORM\Mapping\NamingStrategy;
+use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 
-function NamingStrategy(): NamingStrategy
+function CustomNamingStrategy(): NamingStrategy
 {
-    static $namingStrategy;
+    static $customNamingStrategy;
     
-    $namingStrategy ??= new class() implements NamingStrategy
+    $customNamingStrategy ??= new class() implements NamingStrategy
     {
+        private readonly NamingStrategy $underscoreNamingStrategy;
+
+        public function __construct()
+        {
+            $this->underscoreNamingStrategy = new UnderscoreNamingStrategy(
+                case: \CASE_LOWER, 
+                numberAware: false
+            );
+        }
+
         public function classToTableName(
             $className
         )
@@ -46,7 +57,7 @@ function NamingStrategy(): NamingStrategy
             $className = null
         )
         {
-            return UnderscoreNamingStrategy()->propertyToColumnName($propertyName, $className);
+            return $this->underscoreNamingStrategy->propertyToColumnName($propertyName, $className);
         }
     
         public function embeddedFieldToColumnName(
@@ -56,7 +67,7 @@ function NamingStrategy(): NamingStrategy
             $embeddedClassName = null
         )
         {
-            return UnderscoreNamingStrategy()->embeddedFieldToColumnName(
+            return $this->underscoreNamingStrategy->embeddedFieldToColumnName(
                 $propertyName, 
                 $embeddedColumnName, 
                 $className, 
@@ -66,14 +77,14 @@ function NamingStrategy(): NamingStrategy
     
         public function referenceColumnName()
         {
-            return UnderscoreNamingStrategy()->referenceColumnName();
+            return $this->underscoreNamingStrategy->referenceColumnName();
         }
     
         public function joinColumnName($propertyName)
         {
-            return UnderscoreNamingStrategy()->joinColumnName($propertyName);
+            return $this->underscoreNamingStrategy->joinColumnName($propertyName);
         }
     };
 
-    return $namingStrategy;
+    return $customNamingStrategy;
 }

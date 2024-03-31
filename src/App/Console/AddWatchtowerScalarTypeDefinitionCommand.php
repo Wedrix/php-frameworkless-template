@@ -7,7 +7,6 @@ namespace App\Console;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 
@@ -27,19 +26,14 @@ function AddWatchtowerScalarTypeDefinitionCommand(): Command
             OutputInterface $output
         ): int
         {
-            if (!$output instanceof ConsoleOutputInterface) {
-                throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
-            }
-            
             $typeName = (function() use ($input, $output): string {
+                /**
+                 * @var QuestionHelper
+                 */
                 $helper = $this->getHelper('question');
     
-                if (!$helper instanceof QuestionHelper) {
-                    throw new \Exception("Instance of ".QuestionHelper::class." expected, ".get_class($helper)." given.");
-                }
-    
                 return $helper->ask($input, $output, new Question(
-                    question: "What is the custom scalar's name? "
+                    question: 'What is the custom scalar\'s name? '
                 ));
             })();
     

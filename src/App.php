@@ -11,7 +11,7 @@ namespace
 
     use function App\Config;
     use function App\Console;
-    use function App\DataStore;
+    use function App\DoctrineEntityManager;
     use function App\Server;
     use function App\TwigTemplateEngine;
     use function App\WatchtowerConsole;
@@ -24,14 +24,16 @@ namespace
     }
     
     function App(): App
-    { 
+    {
         static $app;
-
+        
         $app ??= new class() implements App {
             public function __construct()
             {
+                // Install Dependencies
                 \system('composer install');
         
+                // Require Autoloader
                 require \dirname(__DIR__).'/vendor/autoload.php';
 
                 // Uninstall dev dependencies and optimize autoloader for non-dev environments
@@ -42,17 +44,24 @@ namespace
                 }
         
                 // Configure PHP
-                if (Config()->appEnvironment() !== 'development') {
-                    \ini_set('zend.assertions', 0);
-                }
-                else {
-                    \ini_set('zend.assertions', 1);
-                }
+                \ini_set('zend.assertions', (Config()->appEnvironment() !== 'development') ? 0 : 1);
+
+                \error_reporting(\E_ALL);
+
+                \set_error_handler(
+                    function (int $errno, string $errstr, string $errfile, int $errline) {
+                        if ($errno == \E_NOTICE || $errno == \E_WARNING) {
+                            throw new \LogicError("$errstr in $errfile:$errline");
+                        }
+
+                        return false;
+                    }
+                );
 
                 // Generate Doctrine Proxies for non-dev environments
                 if (Config()->appEnvironment() !== 'development') {
-                    DataStore()->getProxyFactory()->generateProxyClasses(
-                        classes: DataStore()->getMetadataFactory()->getAllMetadata()
+                    DoctrineEntityManager()->getProxyFactory()->generateProxyClasses(
+                        classes: DoctrineEntityManager()->getMetadataFactory()->getAllMetadata()
                     );
                 }
 
@@ -66,17 +75,13 @@ namespace
                     foreach (
                         new \RegexIterator(
                             iterator: new \RecursiveIteratorIterator(
-                                iterator: new \RecursiveDirectoryIterator((string) Config()->emailTemplatesDirectory())
+                                iterator: new \RecursiveDirectoryIterator($emailTemplatesDirectory = (string) Config()->emailTemplatesDirectory())
                             ), 
                             pattern: '/.+\.twig/i',
                             mode: \RegexIterator::MATCH
                         )
                         as $templateFile
                     ) {
-                        $emailTemplatesDirectory = (string) Config()->emailTemplatesDirectory();
-
-                        \assert(!empty($emailTemplatesDirectory), new \Exception('Empty emailTemplatesDirectory!'));
-
                         TwigTemplateEngine()->load(
                             name: \explode($emailTemplatesDirectory, $templateFile->getPathname())[1]
                         );
@@ -118,5 +123,5 @@ namespace
 
 namespace App 
 {
-    //TODO: ... determinations go here
+    //TODO: Determinations go here ...
 }

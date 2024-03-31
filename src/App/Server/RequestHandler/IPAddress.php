@@ -26,11 +26,11 @@ final class IPAddress
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid IPAddress! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid IPAddress! The value cannot be empty.');
         }
         
         if (\filter_var($value, \FILTER_VALIDATE_IP, \FILTER_FLAG_IPV4 | \FILTER_FLAG_IPV6) === false) {
-            throw new \Exception('Invalid IP Address.');
+            throw new \InvalidDataException('Invalid IP Address.');
         }
 
         return new self(

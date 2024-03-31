@@ -10,15 +10,10 @@ function AccountOfUser(
     User $user
 ): Account
 {
-    $userRole = $user->role();
-    $userId = $user->id();
+    \assert(userIsKnown($user), 'The user is anonymous.');
 
-    if (\is_null($userRole) || \is_null($userId)) {
-        throw new \Exception('An anonymous user has no account.');
-    }
-
-    // TODO: Complete implementation
-    return match($userRole) {
-        default => throw new \Exception('Unimplemented!')
+    //TODO: Complete this based on the different user roles
+    return match($user->role()) {
+        default => throw new \Error('Unimplemented functionality!')
     };
 }

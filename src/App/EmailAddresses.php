@@ -33,7 +33,7 @@ final class EmailAddresses
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid EmailAddresses! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid EmailAddresses! The value cannot be empty.');
         }
 
         $emailAddressesParts = \explode(',',$value);

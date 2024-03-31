@@ -12,16 +12,18 @@ namespace App\Server
     use GraphQL\Error\DebugFlag;
 
     use function App\Config;
-    use function App\DataStore;
+    use function App\DoctrineEntityManager;
     use function App\Server\RequestHandler\accessTokenAuthenticatesRequest;
-    use function App\Server\RequestHandler\ipAddressAPIRateLimitExceeded;
-    use function App\Server\RequestHandler\refreshTokenAuthenticatesRequest;
+    use function App\Server\RequestHandler\APIRateLimiter;
     use function App\Server\RequestHandler\requestAccessToken;
-    use function App\Server\RequestHandler\requestIPAddress;
+    use function App\Server\RequestHandler\requestClientIPAddress;
     use function App\Server\RequestHandler\requestOrigin;
     use function App\Server\RequestHandler\requestRefreshToken;
     use function App\Server\RequestHandler\requestUserContext;
     use function App\Server\RequestHandler\Session;
+    use function App\Server\RequestHandler\sessionIsNew;
+    use function App\Server\RequestHandler\SessionOfUser;
+    use function App\Server\RequestHandler\thereIsASessionOfUser;
     use function App\Server\RequestHandler\User;
     use function App\WatchtowerExecutor;
 
@@ -43,19 +45,11 @@ namespace App\Server
                 Response $response
             ): void
             {
-                // Set Request IPAddress
-                $request->setAttribute(
-                    attribute: Config()->ipAddressParserAttributeName(),
-                    value: requestIPAddress(
-                        request: $request,
-                        checkProxyHeaders: Config()->ipAddressParserCheckProxyHeaders(),
-                        headersToInspect: Config()->ipAddressParserHeadersToInspect(),
-                        trustedProxies: Config()->ipAddressParserTrustedProxies()
-                    ) ?? throw new \Exception('Error resolving the IP Address for this request.')
-                );
-
-                // Check Rate Limiting
-                if (ipAddressAPIRateLimitExceeded(ipAddress: $request->attribute(Config()->ipAddressParserAttributeName()))) {
+                // Rate Limit API Access
+                try {
+                    APIRateLimiter()->checkThatClientIsAllowed(clientIPAddress: requestClientIPAddress(request: $request));
+                }
+                catch (\ConstraintViolationException) {
                     $response->setStatus(429);
 
                     return;
@@ -82,27 +76,18 @@ namespace App\Server
                     }
                 }
 
-                // Restore Request Session If User Logged In
+                // Restore Request Session if Access Token authenticates User
                 if (
-                    !\is_null($accessToken = requestAccessToken($request)) && !\is_null($userContext = requestUserContext($request))
+                    !\is_null($accessToken = requestAccessToken($request)) 
+                    && accessTokenAuthenticatesRequest(accessToken: $accessToken, request: $request)
                 ) {
-                    if (!accessTokenAuthenticatesRequest(accessToken: $accessToken, request: $request)) {
-                        $response->setStatus(401);
-
-                        return;
-                    }
-    
-                    if (!\is_null($refreshToken = requestRefreshToken($request)) && !refreshTokenAuthenticatesRequest(refreshToken: $refreshToken, request: $request)) {
-                        $response->setStatus(401);
-
-                        return;
-                    }
-                
                     SessionOfUser::associate(
                         session: Session(
                             accessToken: $accessToken,
                             contextCookie: ContextCookie::{
-                                (static function() use($userContext): string {
+                                (static function() use($request): string {
+                                    $userContext = requestUserContext(request: $request);
+
                                     $maxAge = Config()->authRefreshTokenTTLInMinutes() * 60;
                             
                                     $cookie = "user_context=$userContext; Max-Age=$maxAge; SameSite=Strict; HttpOnly";
@@ -114,7 +99,7 @@ namespace App\Server
                                     return $cookie;
                                 })()
                             }(),
-                            refreshToken: $refreshToken
+                            refreshToken: requestRefreshToken(request: $request)
                         ),
                         user: $user = User(
                             id: Id::{AccessToken::sub($accessToken)}(),
@@ -135,13 +120,19 @@ namespace App\Server
                 // Handle GraphQL Request
                 if ($request->uri()->path() === Config()->appEndpoint()) {
                     $input = (array) $request->parsedBody();
+
+                    if (!isset($input['query']) || empty($input['query'])) {
+                        $response->setStatus(400);
+
+                        return;
+                    }
     
                     $response->body()
                             ->write(
-                                \is_string(
-                                    $responseBody = \json_encode(
-                                        ($graphQLResult = WatchtowerExecutor()->executeQuery(
-                                            source: $input['query'] ?? throw new \Exception('Empty query.'),
+                                \json_encode(
+                                    DoctrineEntityManager()->wrapInTransaction(
+                                        static fn() => WatchtowerExecutor()->executeQuery(
+                                            source: $input['query'],
                                             rootValue: [],
                                             contextValue: [
                                                 'request' => $request,
@@ -150,28 +141,26 @@ namespace App\Server
                                             variableValues: $input['variables'] ?? null,
                                             operationName: $input['operationName'] ?? null,
                                             validationRules: null
-                                        ))
+                                        )
                                         ->toArray(
                                             DebugFlag::RETHROW_UNSAFE_EXCEPTIONS
                                         )
                                     )
-                                ) 
-                                ? $responseBody
-                                : throw new \Exception('Error evaluating GraphQL result.')
+                                )
                             );
                     
                     $response->setHeader('Content-Type', 'application/json; charset=utf-8');
+                }
 
-                    if (!empty($graphQLResult->errors) && ($response->statusCode() == 200)) {
-                        $response->setStatus(422);
-                    }
+                // Set session headers
+                if (thereIsASessionOfUser(user: $user) && sessionIsNew($session = SessionOfUser(user: $user))) {
+                    $response->setHeader('X-Access-Token', (string) $session->accessToken());
+                    $response->setHeader('X-Refresh-Token', (string) $session->refreshToken());
+                    $response->setHeader('Set-Cookie', (string) $session->contextCookie());
                 }
 
                 // Dissociate Request from User
                 UserOfRequest::dissociate(user: $user, request: $request);
-
-                // Clear Data Store
-                DataStore()->clear();
             }
         };
     
@@ -186,7 +175,6 @@ namespace App\Server\RequestHandler
     use App\Password;
     use App\Server\Request;
 
-    use function App\Cache;
     use function App\Config;
     use function App\Encrypter;
 
@@ -267,14 +255,14 @@ namespace App\Server\RequestHandler
         return !thereIsARequestOfUser(user: $user);
     }
 
-    function requestIsNotOfUser(
+    function requestIsOfUser(
         Request $request,
         User $user
     ): bool
     {
         global $users_requests;
 
-        return ($users_requests[$user] ?? null) !== $request;
+        return ($users_requests[$user] ?? null) === $request;
     }
 
     function sessionIsOfUser(
@@ -282,37 +270,50 @@ namespace App\Server\RequestHandler
         User $user
     ): bool
     {
-        return !sessionIsNotOfUser(session: $session, user: $user);
-    }
-
-    function sessionIsNotOfUser(
-        Session $session,
-        User $user
-    ): bool
-    {
         global $users_sessions;
 
-        return ($users_sessions[$user] ?? null) !== $session;
+        return ($users_sessions[$user] ?? null) === $session;
     }
 
-    function userIsNotOfRequest(
+    function userIsOfRequest(
         User $user,
         Request $request
     ): bool
     {
         global $requests_users;
 
-        return ($requests_users[$request] ?? null) !== $user;
+        return ($requests_users[$request] ?? null) === $user;
     }
 
-    function userIsNotOfSession(
+    function userIsOfSession(
         User $user,
         Session $session
     ): bool
     {
         global $sessions_users;
 
-        return ($sessions_users[$session] ?? null) !== $user;
+        return ($sessions_users[$session] ?? null) === $user;
+    }
+
+    function userIsAnonymous(
+        User $user
+    ): bool
+    {
+        return \is_null($user->role()) || \is_null($user->id());
+    }
+
+    function userIsKnown(
+        User $user
+    ): bool
+    {
+        if (userIsAnonymous(user: $user)) {
+            return false;
+        }
+
+        //TODO: Complete this based on the different user roles
+        return match($user->role()) {
+            default => throw new \Error('Unimplemented functionality!')
+        };
     }
 
     function sessionIsExpired(
@@ -322,6 +323,13 @@ namespace App\Server\RequestHandler
 		$time = \date_create_immutable('now');
     
         return AccessToken::exp($session->accessToken()) <= $time->getTimestamp();
+    }
+
+    function sessionIsNew(
+        Session $session
+    ): bool
+    {
+        return AccessToken::iat(accessToken: $session->accessToken()) >= RequestOfUser(user: UserOfSession(session: $session))->time();
     }
 
     function passwordAuthenticatesUser(
@@ -344,9 +352,9 @@ namespace App\Server\RequestHandler
             role: AccessToken::role($accessToken)
         );
 
-        return
+        return userIsKnown(user: $user) &&
             (AccessToken::iss($accessToken) === Config()->appDomain()) &&
-            (AccessToken::aud($accessToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
+            (AccessToken::aud($accessToken) === (requestOrigin($request) ?? '')) &&
             (\in_array(AccessToken::aud($accessToken), Config()->accessControlAllowedOrigins())) &&
             (AccessToken::iat($accessToken) <= $time->getTimestamp()) &&
             (AccessToken::exp($accessToken) === $time->setTimestamp(AccessToken::iat($accessToken) + (Config()->authAccessTokenTTLInMinutes() * 60))->getTimestamp()) &&
@@ -354,62 +362,36 @@ namespace App\Server\RequestHandler
             (AccessToken::role($accessToken) === $user->role()) &&
             (AccessToken::fingerprint($accessToken) === \hash_hmac(
                 algo: Config()->authFingerprintHashAlgorithm(),
-                data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
+                data: requestUserContext(request: $request) ?? '',
                 key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
                         ? $authorizationKey 
-                        : throw new \Exception('Error decrypting the authorization key.')
-            ));
-    }
-
-    function refreshTokenAuthenticatesRequest(
-        RefreshToken $refreshToken,
-        Request $request
-    ): bool
-    {
-        $time = \date_create_immutable('now');
-
-        $user = User(
-            id: Id::{RefreshToken::sub($refreshToken)}(),
-            role: RefreshToken::role($refreshToken)
-        );
-
-        return 
-            (RefreshToken::iss($refreshToken) === Config()->appDomain()) &&
-            (RefreshToken::aud($refreshToken) === (requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'))) &&
-            (\in_array(RefreshToken::aud($refreshToken), Config()->accessControlAllowedOrigins())) &&
-            (RefreshToken::iat($refreshToken) <= $time->getTimestamp()) &&
-            (RefreshToken::exp($refreshToken) === $time->setTimestamp(RefreshToken::iat($refreshToken) + (Config()->authRefreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
-            (RefreshToken::sub($refreshToken) === (string) $user->id()) &&
-            (RefreshToken::role($refreshToken) === $user->role()) &&
-            (RefreshToken::fingerprint($refreshToken) === \hash_hmac(
-                algo: Config()->authFingerprintHashAlgorithm(),
-                data: requestUserContext(request: $request) ?? throw new \Exception('The user context is not set for the request.'),
-                key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
-                        ? $authorizationKey 
-                        : throw new \Exception('Error decrypting the authorization key.')
+                        : ''
             ));
     }
 
     /**
-     * Get the client's IP address as determined from the proxy header (X-Forwarded-For or from $request->connection->_remoteAddress
+     * Get the client's IP address as determined from the proxy header (X-Forwarded-For or from $request->connection->getRemoteAddress()).
      * @see https://github.com/akrabat/ip-address-middleware/blob/main/src/IpAddress.php
-     * 
-     * @param Request $request The request instance
-     * @param bool $checkProxyHeaders Whether to use proxy headers to determine client IP address
-     * @param array<string> $headersToInspect List of proxy headers inspected for the client IP address
-     * @param array<string> $trustedProxies List of trusted proxy addresses (accepts wildcards and CIDR notation)
      */
     // TODO: Verify the implementation. It was adapted without much understanding.
-    function requestIPAddress(
-        Request $request,
-        bool $checkProxyHeaders,
-        array $headersToInspect,
-        array $trustedProxies
-    ): ?IPAddress
+    function requestClientIPAddress(
+        Request $request
+    ): IPAddress
     {
-        if ($checkProxyHeaders && empty($trustedProxies)) {
-            throw new \Exception('Use of the forward headers requires an array for trusted proxies.');
-        }
+        /**
+         * @var bool
+         */
+        $checkProxyHeaders = Config()->ipAddressParserCheckProxyHeaders();
+
+        /**
+         * @var array<string>
+         */
+        $headersToInspect = Config()->ipAddressParserHeadersToInspect();
+
+        /**
+         * @var array<string>
+         */
+        $trustedProxies = Config()->ipAddressParserTrustedProxies();
 
         /**
          * List of trusted proxy IP wildcard ranges
@@ -428,7 +410,7 @@ namespace App\Server\RequestHandler
         /**
          * List of trusted proxy IP addresses
          *
-         * If not empty, then one of these IP addresses must be in $_SERVER['REMOTE_ADDR']
+         * If not empty, then one of these IP addresses must be in $request->connection->getRemoteAddress()
          * in order for the proxy headers to be looked at.
          *
          * @var array<string>
@@ -484,10 +466,6 @@ namespace App\Server\RequestHandler
             }
         }
 
-        /**
-         * Connection::getRemoteAddress() returns string
-         * @see https://github.com/walkor/workerman/blob/f3856199e0105eb66b35dc4c7d091e2283e4b682/src/Connection/ConnectionInterface.php#L124C16-L124C16 
-         */
         $remoteAddress = \extract_ip_address($request->connection->getRemoteAddress());
                         
         if (\is_valid_ip_address($remoteAddress)) {
@@ -580,9 +558,7 @@ namespace App\Server\RequestHandler
             }
         }
 
-        return empty($ipAddress)
-            ? null
-            : IPAddress::{$ipAddress}();
+        return IPAddress::{$ipAddress}();
     }
 
     function requestOrigin(
@@ -605,16 +581,10 @@ namespace App\Server\RequestHandler
     {
         $requestAuthorizationHeader = requestAuthorizationHeader($request);
 
-        \assert(
-            \is_null($requestAuthorizationHeader) || !empty($requestAuthorizationHeader), 
-            new \Exception('Invalid \'Authorization\' header!')
-        );
-
-        return \is_null($requestAuthorizationHeader)
+        return (empty($requestAuthorizationHeader) || !\str_starts_with($requestAuthorizationHeader,'Bearer'))
                 ? null
                 : AccessToken::{
-                    \explode('Bearer ', $requestAuthorizationHeader)[1] 
-                        ?? throw new \Exception('Invalid \'Authorization\' header!')
+                    \explode('Bearer ', $requestAuthorizationHeader)[1]
                 }();
     }
 
@@ -624,16 +594,10 @@ namespace App\Server\RequestHandler
     {
         $requestReauthorizationHeader = requestReauthorizationHeader($request);
 
-        \assert(
-            \is_null($requestReauthorizationHeader) || !empty($requestReauthorizationHeader), 
-            new \Exception('Invalid \'Reauthorization\' header!')
-        );
-
-        return \is_null($requestReauthorizationHeader)
+        return (empty($requestReauthorizationHeader) || !\str_starts_with($requestReauthorizationHeader,'Bearer'))
                 ? null
                 : RefreshToken::{
-                    \explode('Bearer ', $requestReauthorizationHeader)[1] 
-                        ?? throw new \Exception('Invalid \'Reauthorization\' header!')
+                    \explode('Bearer ', $requestReauthorizationHeader)[1]
                 }();
     }
 
@@ -649,49 +613,5 @@ namespace App\Server\RequestHandler
     ): ?string
     {
         return $request->header('Reauthorization')[0] ?? null;
-    }
-
-    /**
-     * Uses the Sliding Window algorithm
-     */
-    function ipAddressAPIRateLimitExceeded(
-        IPAddress $ipAddress
-    ): bool
-    {
-        $time = \date_create_immutable('now');
-
-        // Fetch user accesses
-        $cacheItem = Cache()->getItem(key: "ip_address_{$ipAddress}_api_access");
-
-        $userAccesses = $cacheItem->isHit() 
-                                ? $cacheItem->get() 
-                                : [];
-
-        // Add current timestamp as new user access
-        $userAccesses[] = WindowAccess(
-            timestamp: $time->getTimestamp()
-        );
-
-        // Filter user accesses where timestamps < current timestamp - access window size in seconds
-        $userAccesses = \array_filter(
-            $userAccesses,
-            static fn(WindowAccess $access) => $access->timestamp() >= ($time->getTimestamp() - Config()->accessControlApiAccessWindowSizeInSeconds())
-        );
-
-        // Save filtered user accesses
-        Cache()->save(
-            $cacheItem->set($userAccesses)
-                    ->expiresAfter(Config()->accessControlApiAccessWindowSizeInSeconds())
-        );
-
-        // Count filtered user accesses
-        $accessCount = \count($userAccesses);
-
-        // Exceeded if user accesses count > limit
-        if ($accessCount > Config()->accessControlApiAccessLimit()) {
-            return true;
-        }
-
-        return false;
     }
 }

@@ -29,7 +29,7 @@ final class FilePaths
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid FilePaths! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid FilePaths! The value cannot be empty.');
         }
 
         $filePathsParts = \explode(',',$value);

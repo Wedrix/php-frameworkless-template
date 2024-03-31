@@ -50,7 +50,7 @@ final class RefreshToken
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid RefreshToken! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid RefreshToken! The value cannot be empty.');
         }
 
         try {
@@ -66,22 +66,26 @@ final class RefreshToken
             $payload = (array) $e->getPayload();
         }
 
-        $iss = $payload['iss'] ?? throw new \Exception('Invalid RefreshToken!');
-        $aud = $payload['aud'] ?? throw new \Exception('Invalid RefreshToken!');
-        $iat = $payload['iat'] ?? throw new \Exception('Invalid RefreshToken!');
-        $exp = $payload['exp'] ?? throw new \Exception('Invalid RefreshToken!');
-        $sub = $payload['sub'] ?? throw new \Exception('Invalid RefreshToken!');
-        $role = $payload['role'] ?? throw new \Exception('Invalid RefreshToken!');
-        $fingerprint = $payload['fingerprint'] ?? throw new \Exception('Invalid RefreshToken!');
+        if (
+            !isset($payload['iss'])
+            || !isset($payload['aud'])
+            || !isset($payload['iat'])
+            || !isset($payload['exp'])
+            || !isset($payload['sub'])
+            || !isset($payload['role'])
+            || !isset($payload['fingerprint'])
+        ) {
+            throw new \InvalidDataException('Invalid RefreshToken!');
+        }
 
         return new self(
-            iss: $iss,
-            aud: $aud,
-            iat: $iat,
-            exp: $exp,
-            sub: $sub,
-            role: $role,
-            fingerprint: $fingerprint
+            iss: $payload['iss'],
+            aud: $payload['aud'],
+            iat: $payload['iat'],
+            exp: $payload['exp'],
+            sub: $payload['sub'],
+            role: $payload['role'],
+            fingerprint: $payload['fingerprint']
         );
     }
 

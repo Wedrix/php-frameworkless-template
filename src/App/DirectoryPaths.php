@@ -29,7 +29,7 @@ final class DirectoryPaths
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid DirectoryPaths! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid DirectoryPaths! The value cannot be empty.');
         }
 
         $directoryPathsParts = \explode(',',$value);

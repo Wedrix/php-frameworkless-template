@@ -26,11 +26,11 @@ final class Text
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid Text! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid Text! The value cannot be empty.');
         }
 
         if ($value !== \strip_tags_with_content($value)) {
-            throw new \Exception('Invalid Text! The value cannot contain HTML tags.');
+            throw new \InvalidDataException('Invalid Text! The value cannot contain HTML tags.');
         }
 
         return new self(

@@ -6,7 +6,6 @@ namespace App\Console;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function App\SysAdmin;
@@ -25,10 +24,6 @@ function ClearServerLogsCommand(): Command
             OutputInterface $output
         ): int
         {
-            if (!$output instanceof ConsoleOutputInterface) {
-                throw new \Exception('This command only accepts an instance of "ConsoleOutputInterface".');
-            }
-
             $output->writeln("<info>Clearing...</info>");
 
             SysAdmin()->clearServerLogs();

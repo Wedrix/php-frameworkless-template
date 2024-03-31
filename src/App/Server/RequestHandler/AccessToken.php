@@ -50,7 +50,7 @@ final class AccessToken
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid AccessToken! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid AccessToken! The value cannot be empty.');
         }
 
         try {
@@ -66,22 +66,26 @@ final class AccessToken
             $payload = (array) $e->getPayload();
         }
 
-        $iss = $payload['iss'] ?? throw new \Exception('Invalid AccessToken!');
-        $aud = $payload['aud'] ?? throw new \Exception('Invalid AccessToken!');
-        $iat = $payload['iat'] ?? throw new \Exception('Invalid AccessToken!');
-        $exp = $payload['exp'] ?? throw new \Exception('Invalid AccessToken!');
-        $sub = $payload['sub'] ?? throw new \Exception('Invalid AccessToken!');
-        $role = $payload['role'] ?? throw new \Exception('Invalid AccessToken!');
-        $fingerprint = $payload['fingerprint'] ?? throw new \Exception('Invalid AccessToken!');
+        if (
+            !isset($payload['iss'])
+            || !isset($payload['aud'])
+            || !isset($payload['iat'])
+            || !isset($payload['exp'])
+            || !isset($payload['sub'])
+            || !isset($payload['role'])
+            || !isset($payload['fingerprint'])
+        ) {
+            throw new \InvalidDataException('Invalid AccessToken!');
+        }
 
         return new self(
-            iss: $iss,
-            aud: $aud,
-            iat: $iat,
-            exp: $exp,
-            sub: $sub,
-            role: $role,
-            fingerprint: $fingerprint
+            iss: $payload['iss'],
+            aud: $payload['aud'],
+            iat: $payload['iat'],
+            exp: $payload['exp'],
+            sub: $payload['sub'],
+            role: $payload['role'],
+            fingerprint: $payload['fingerprint']
         );
     }
 

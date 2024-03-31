@@ -7,7 +7,6 @@ namespace App\Console;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -27,10 +26,6 @@ function ListWatchtowerPluginsCommand(): Command
             OutputInterface $output
         ): int
         {
-            if (!$output instanceof ConsoleOutputInterface) {
-                throw new \Exception('This command accepts only an instance of "ConsoleOutputInterface".');
-            }
-    
             if (\iterator_count(WatchtowerConsole()->plugins()) > 0) {
                 $styledOutput = new SymfonyStyle($input, $output);
         

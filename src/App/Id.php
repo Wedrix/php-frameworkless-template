@@ -26,11 +26,11 @@ final class Id
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid Id! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid Id! The value cannot be empty.');
         }
 
         if (!\uuid_is_valid($value)) {
-            throw new \Exception("Invalid Id value.");
+            throw new \InvalidDataException("Invalid Id value.");
         }
 
         return new self(

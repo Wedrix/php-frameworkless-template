@@ -74,7 +74,7 @@ function SysAdmin(): SysAdmin
                         if (++$attempt >= $maxAttempts) {
                             \fclose($fileHandle);
     
-                            throw new \Exception("Unable to secure lock for the log file '$logFile'.");
+                            throw new \IOException("Unable to secure lock for the log file '$logFile'.");
                         }
     
                         \usleep(100000);
@@ -87,7 +87,7 @@ function SysAdmin(): SysAdmin
                     \fclose($fileHandle);
                 } 
                 else {
-                    throw new \Exception("Unable to open the log file '$logFile'.");
+                    throw new \IOException("Unable to open the log file '$logFile'.");
                 }
             }
         }

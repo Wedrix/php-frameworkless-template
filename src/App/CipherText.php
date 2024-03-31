@@ -26,11 +26,11 @@ final class CipherText
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid CipherText! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid CipherText! The value cannot be empty.');
         }
 
         if (Encrypter()->decrypt($value) === false) {
-            throw new \Exception('Invalid Ciphertext!');
+            throw new \InvalidDataException('Invalid Ciphertext!');
         }
 
         return new self(
@@ -45,7 +45,7 @@ final class CipherText
         $decryptedValue = Encrypter()->decrypt($cipherText->value);
 
         if (\is_bool($decryptedValue)) {
-            throw new \Exception("Error decrypting '$cipherText'.");
+            throw new \InvalidDataException("Error decrypting '$cipherText'.");
         }
 
         return $decryptedValue;

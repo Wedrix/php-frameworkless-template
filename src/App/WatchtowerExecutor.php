@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace App;
 
-use Wedrix\Watchtower\Executor as WatchtowerExecutor;
-
 use function App\Config;
-use function App\DataStore;
+use function App\DoctrineEntityManager;
 
-function WatchtowerExecutor(): WatchtowerExecutor
+function WatchtowerExecutor(): _WatchtowerExecutor
 {
     static $watchtowerExecutor;
     
-    $watchtowerExecutor ??= new WatchtowerExecutor(
-        entityManager: DataStore(),
+    $watchtowerExecutor ??= new _WatchtowerExecutor(
+        entityManager: DoctrineEntityManager(),
         schemaFile: Config()->watchtowerSchemaFileDirectory().'/'.Config()->watchtowerSchemaFileName(),
         pluginsDirectory: (string) Config()->watchtowerPluginsDirectory(),
         scalarTypeDefinitionsDirectory: (string) Config()->watchtowerScalarTypeDefinitionsDirectory(),

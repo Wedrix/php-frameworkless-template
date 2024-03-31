@@ -26,11 +26,11 @@ final class HTML
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid HTML! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid HTML! The value cannot be empty.');
         }
 
         if ((new \DOMDocument())->loadHTML($value) === false) {
-            throw new \Exception('Invalid HTML!');
+            throw new \InvalidDataException('Invalid HTML!');
         }
         
         return new self(

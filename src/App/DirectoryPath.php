@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 /**
- * @see http://regexr.com/7ng41
+ * @see http://regexr.com/7sr2t
  */
 final class DirectoryPath
 {
@@ -29,11 +29,12 @@ final class DirectoryPath
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid DirectoryPath! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid DirectoryPath! The value cannot be empty.');
         }
 
-        if (!\preg_match('/(((\w+:(\\|\/))|(\w+:((\\|\/)\w+)+))|(\\|\/)|(((\\|\/)\w+)*))/', $value)) {
-            throw new \Exception('Invalid DirectoryPath!');
+        // Note: We need to escape '\' twice '\\\' in PHP for some reason
+        if (!\preg_match('/^((\w+:(\\\|\/))|(\w+:((\\\|\/)[\w\s-]+)+)|(\/)|((\/[\w\s-]+)+))$/', $value)) {
+            throw new \InvalidDataException('Invalid DirectoryPath!');
         }
 
         return new self(

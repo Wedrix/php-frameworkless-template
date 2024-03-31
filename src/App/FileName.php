@@ -26,11 +26,11 @@ final class FileName
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid FileName! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid FileName! The value cannot be empty.');
         }
         
         if (!(\pathinfo($value, \PATHINFO_BASENAME) === $value)) {
-            throw new \Exception('Invalid FileName!');
+            throw new \InvalidDataException('Invalid FileName!');
         }
 
         return new self(

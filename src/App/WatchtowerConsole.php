@@ -6,7 +6,7 @@ namespace App;
 
 use Wedrix\Watchtower\Console as WatchtowerConsole;
 
-use function App\DataStore;
+use function App\DoctrineEntityManager;
 use function App\Config;
 
 function WatchtowerConsole(): WatchtowerConsole
@@ -14,7 +14,7 @@ function WatchtowerConsole(): WatchtowerConsole
     static $console;
     
     $console ??= new WatchtowerConsole(
-        entityManager: DataStore(),
+        entityManager: DoctrineEntityManager(),
         schemaFileDirectory: (string) Config()->watchtowerSchemaFileDirectory(),
         schemaFileName: (string) Config()->watchtowerSchemaFileName(),
         pluginsDirectory: (string) Config()->watchtowerPluginsDirectory(),

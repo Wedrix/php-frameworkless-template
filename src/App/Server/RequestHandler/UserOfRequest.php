@@ -10,11 +10,9 @@ function UserOfRequest(
     Request $request
 ): User
 {
-    global $requests_users;
+    \assert(thereIsAUserOfRequest(request: $request), 'There is no user of the request.');
 
-    if (thereIsNoUserOfRequest(request: $request)) {
-        throw new \Exception('There is no user of the request.');
-    }
+    global $requests_users;
 
     return $requests_users[$request];
 }
@@ -26,11 +24,9 @@ final class UserOfRequest
         Request $request
     ): void
     {
-        global $requests_users, $users_requests;
+        \assert(thereIsNoUserOfRequest(request: $request), 'There is a user of the request.');
 
-        if (thereIsAUserOfRequest(request: $request)) {
-            throw new \Exception('There is a user of the request.');
-        }
+        global $requests_users, $users_requests;
         
         $requests_users[$request] = $user;
 
@@ -42,11 +38,9 @@ final class UserOfRequest
         Request $request
     ): void
     {
-        global $requests_users, $users_requests;
+        \assert(userIsOfRequest(user: $user, request: $request), 'The user is not of the request.');
 
-        if (userIsNotOfRequest(user: $user, request: $request)) {
-            throw new \Exception('The user is not of the request.');
-        }
+        global $requests_users, $users_requests;
 
         $user = $requests_users[$request];
 

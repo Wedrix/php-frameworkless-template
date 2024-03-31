@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 /**
- * @see http://regexr.com/7ng47
+ * @see http://regexr.com/7sr3l
  */
 final class FilePath
 {
@@ -29,11 +29,12 @@ final class FilePath
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid FilePath! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid FilePath! The value cannot be empty.');
         }
 
-        if (!\preg_match('/(((\w+:((\\|\/)\w+(.\w+)?)+))|(((\\|\/)\w+(.\w+)?)*))/', $value)) {
-            throw new \Exception('Invalid FilePath!');
+        // Note: We need to escape '\' twice '\\\' in PHP for some reason
+        if (!\preg_match('/^((\w+:((\\\|\/)[\w\s-]+)+(.\w+)?)|((\/[\w\s-]+)+(.\w+)?))$/', $value)) {
+            throw new \InvalidDataException('Invalid FilePath!');
         }
 
         return new self(

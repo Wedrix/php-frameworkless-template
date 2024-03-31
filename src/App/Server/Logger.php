@@ -10,7 +10,7 @@ interface Logger
 {
     public function log(
         string $message
-    );
+    ): void;
 }
 
 function Logger(): Logger
@@ -20,7 +20,7 @@ function Logger(): Logger
     $logger ??= new class() implements Logger {
         public function log(
             string $message
-        )
+        ): void
         {
             $logFile = Config()->serverLogFilesDirectory() . '/' . \date_create_immutable('now')->format('Y-m-d') . '.log';
 
@@ -32,24 +32,20 @@ function Logger(): Logger
                     if (++$attempt >= $maxAttempts) {
                         \fclose($fileHandle);
 
-                        echo "Unable to secure lock for the log file '$logFile'.";
-
-                        exit; // Kill the process instead of throwing another error to prevent infinite retries
+                        echo "Unable to secure lock for the log file '$logFile'."; // Print error instead of throwing another error, preventing infinite retries.
                     }
 
                     \usleep(100000);
                 }
 
-                \fwrite($fileHandle, "\r\n" . \date_create()->format('Y-m-d H:i:s') . $message);
+                \fwrite($fileHandle, "\r\n" . \date_create_immutable('now')->format('Y-m-d H:i:s') . $message);
 
                 \flock($fileHandle, \LOCK_UN);
 
                 \fclose($fileHandle);
             } 
             else {
-                echo "Unable to open the log file '$logFile'.";
-
-                exit; // Kill the process instead of throwing another error to prevent infinite retries
+                echo "Unable to open the log file '$logFile'."; // Print error instead of throwing another error, preventing infinite retries.
             }
 
         }

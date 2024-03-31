@@ -12,7 +12,7 @@ interface User
 
     public function role(): ?string;
 
-    //TODO: ... use cases go here
+    //TODO: Use cases go here ...
 }
 
 function User(

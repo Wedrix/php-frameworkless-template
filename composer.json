@@ -1,34 +1,11 @@
 {
+    "name": "storekd/api-server",
     "type": "project",
     "license": "proprietary",
     "version": "dev-main",
-    "repositories": [
-        {
-            "type": "package",
-            "package": {
-                "type": "metapackage",
-                "name": "vendor/package-patches",
-                "version": "1.0.0",
-                "require": {
-                    "netresearch/composer-patches-plugin": "~1.0"
-                },
-                "extra": {
-                    "patches": {
-                        "doctrine/orm": {
-                            "^2.11": [
-                                {
-                                    "url": "./patches/doctrine_nullable_embeddables.patch",
-                                    "title": "[FEATURE] Nullable Embeddables for Doctrine 2"
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        }
-    ],
+    "description": "API server for storekd.com",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-event": "*",
         "ext-redis": "*",
         "ext-uuid": "*",
@@ -39,36 +16,64 @@
         "workerman/workerman": "^4.1",
         "twig/twig": "^3.0",
         "guzzlehttp/guzzle": "^7.3",
-        "http-interop/http-factory-guzzle": "^1.0",
         "workerman/crontab": "^1.0",
         "laminas/laminas-crypt": "^3.8",
         "firebase/php-jwt": "^6.9",
-        "vendor/package-patches": "~1.0",
         "symfony/console": "^6.1",
         "wedrix/watchtower": "^5.0",
         "laravel/serializable-closure": "^1.3",
         "matthiasmullie/scrapbook": "^1.5",
         "symfony/var-exporter": "^6.2",
-        "symfony/mailer": "^6.3"
+        "symfony/mailer": "^6.3",
+        "cweagans/composer-patches": "^1.7"
     },
     "autoload": {
         "psr-4": {
             "App\\": "src/App"
         },
         "files": [
-            "src/array_extensions.php",
-            "src/string_extensions.php",
+            "src/exceptions.php",
+            "src/errors.php",
+            "src/extensions.php",
+            "src/helpers.php",
+            "src/App/Account.php",
+            "src/App/Cache.php",
+            "src/App/Config.php",
+            "src/App/DoctrineEntityManager/CustomNamingStrategy.php",
+            "src/App/DoctrineEntityManager.php",
+            "src/App/DoctrineEntityManagerProvider.php",
+            "src/App/WatchtowerConsole.php",
             "src/App/Console/AddWatchtowerPluginCommand.php",
             "src/App/Console/AddWatchtowerScalarTypeDefinitionCommand.php",
+            "src/App/Console/AllCommands.php",
             "src/App/Console/ClearServerLogsCommand.php",
+            "src/App/Console/DoctrineClearCacheCollectionRegionCommand.php",
+            "src/App/Console/DoctrineClearCacheEntityRegionCommand.php",
+            "src/App/Console/DoctrineClearCacheMetadataCommand.php",
+            "src/App/Console/DoctrineClearCacheQueryCommand.php",
+            "src/App/Console/DoctrineClearCacheQueryRegionCommand.php",
+            "src/App/Console/DoctrineClearCacheResultCommand.php",
+            "src/App/Console/DoctrineGenerateProxiesCommand.php",
+            "src/App/Console/DoctrineInfoCommand.php",
+            "src/App/Console/DoctrineMappingDescribeCommand.php",
+            "src/App/Console/DoctrineRunDqlCommand.php",
+            "src/App/Console/DoctrineRunSqlCommand.php",
+            "src/App/Console/DoctrineSchemaToolCreateCommand.php",
+            "src/App/Console/DoctrineSchemaToolDropCommand.php",
+            "src/App/Console/DoctrineSchemaToolUpdateCommand.php",
+            "src/App/Console/DoctrineValidateSchemaCommand.php",
             "src/App/Console/GenerateWatchtowerCacheCommand.php",
             "src/App/Console/GenerateWatchtowerSchemaCommand.php",
             "src/App/Console/ListWatchtowerPluginsCommand.php",
             "src/App/Console/ListWatchtowerScalarTypeDefinitionsCommand.php",
             "src/App/Console/UpdateWatchtowerSchemaCommand.php",
-            "src/App/DataStore/NamingStrategy.php",
-            "src/App/DataStore/UnderscoreNamingStrategy.php",
+            "src/App/Console.php",
+            "src/App/Email.php",
+            "src/App/EmailClient.php",
+            "src/App/Encrypter.php",
+            "src/App/Hasher.php",
             "src/App/Server/RequestHandler/AccountOfUser.php",
+            "src/App/Server/RequestHandler/APIRateLimiter.php",
             "src/App/Server/RequestHandler/RequestOfUser.php",
             "src/App/Server/RequestHandler/Session.php",
             "src/App/Server/RequestHandler/SessionOfUser.php",
@@ -76,27 +81,16 @@
             "src/App/Server/RequestHandler/UserOfRequest.php",
             "src/App/Server/RequestHandler/UserOfSession.php",
             "src/App/Server/RequestHandler/WindowAccess.php",
-            "src/App/Server/ConfiguredJobs.php",
+            "src/App/Server/AllJobs.php",
             "src/App/Server/Logger.php",
             "src/App/Server/ProcessTaskQueueIndefinitelyJob.php",
             "src/App/Server/RequestHandler.php",
-            "src/App/Account.php",
-            "src/App/Cache.php",
-            "src/App/Config.php",
-            "src/App/Console.php",
-            "src/App/DataStore.php",
-            "src/App/Email.php",
-            "src/App/EmailClient.php",
-            "src/App/Encrypter.php",
-            "src/App/Hasher.php",
             "src/App/Server.php",
             "src/App/SymfonyMailer.php",
             "src/App/SysAdmin.php",
             "src/App/TaskQueue.php",
             "src/App/TwigTemplateEngine.php",
-            "src/App/WatchtowerConsole.php",
-            "src/App/WatchtowerExecutor.php",
-            "src/Inflector.php"
+            "src/App/WatchtowerExecutor.php"
         ]
     },
     "autoload-dev": {
@@ -112,12 +106,23 @@
         "phpstan/phpstan": "^1.10",
         "phpstan/phpstan-doctrine": "^1.3",
         "phploc/phploc": "^7.0",
-        "sebastian/phpcpd": "^6.0"
+        "sebastian/phpcpd": "^6.0",
+        "symplify/vendor-patches": "^11.3"
     },
     "config": {
         "allow-plugins": {
-            "netresearch/composer-patches-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "cweagans/composer-patches": true
+        }
+    },
+    "extra": {
+        "patches": {
+            "phpstan/phpstan": {
+                "Disable opcache for phpstan": "patches/phpstan-phpstan-phpstan.patch"
+            },
+            "doctrine/orm": {
+                "[FEATURE] Nullable Embeddables for Doctrine 2": "patches/doctrine-orm-src-mapping-reflectionembeddedproperty-php.patch"
+            }
         }
     }
 }

@@ -1,0 +1,12 @@
+--- /dev/null
++++ ../phpstan
+@@ -3,6 +3,8 @@
+ 
+ declare (strict_types=1);
+ 
++\ini_set('opcache.enable', '0');
++
+ Phar::loadPhar(__DIR__ . '/phpstan.phar', 'phpstan.phar');
+ 
+-require 'phar://phpstan.phar/bin/phpstan';
++require 'phar://phpstan.phar/bin/phpstan';

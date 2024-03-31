@@ -36,7 +36,7 @@ final class URI
         }
 
         if (($uri = \parse_url($uri)) === false) {
-            throw new \Exception('The source URI string appears to be malformed.');
+            throw new \InvalidDataException('The source URI string appears to be malformed.');
         }
 
         $this->scheme = isset($uri['scheme']) ? $this->normalizeScheme($uri['scheme']) : '';
@@ -299,13 +299,13 @@ final class URI
         }
 
         if (\is_string($port) && !\is_numeric($port)) {
-            throw new \Exception("Invalid port '$port' specified. It must be an integer, an integer string, or null.");
+            throw new \InvalidDataException("Invalid port '$port' specified. It must be an integer, an integer string, or null.");
         }
 
         $port = (int) $port;
 
         if ($port < 1 || $port > 65535) {
-            throw new \Exception("Invalid port '$port' specified. It must be a valid TCP/UDP port in range 1..65535.");
+            throw new \InvalidDataException("Invalid port '$port' specified. It must be a valid TCP/UDP port in range 1..65535.");
         }
 
         return $port;

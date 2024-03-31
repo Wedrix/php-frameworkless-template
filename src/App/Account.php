@@ -29,5 +29,5 @@ function Account(
     CipherText $authorizationKey
 ): Account
 {
-    throw new \Exception('Unimplemented method.');
+    throw new \Error('Unimplemented method.');
 }

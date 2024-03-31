@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+
+
+// String //
+
 function pluralize(
     string $word
 ): string
@@ -45,17 +49,14 @@ function strip_tags_with_content(
   
     if (\count($tags) > 0) {
         if ($invert === false) {
-            return \preg_replace('@<(?!(?:'. \implode('|', $tags) .')\b)(\w+)\b.*?>.*?</\1>@si', '', $text) 
-                ?? throw new \Exception("Error parsing '$text'.");
+            return \preg_replace('@<(?!(?:'. \implode('|', $tags) .')\b)(\w+)\b.*?>.*?</\1>@si', '', $text);
         }
         else {
-            return \preg_replace('@<('. \implode('|', $tags) .')\b.*?>.*?</\1>@si', '', $text) 
-                ?? throw new \Exception("Error parsing '$text'.");
+            return \preg_replace('@<('. \implode('|', $tags) .')\b.*?>.*?</\1>@si', '', $text);
         }
     }
     else if($invert === false) {
-      return \preg_replace('@<(\w+)\b.*?>.*?</\1>@si', '', $text) 
-        ?? throw new \Exception("Error parsing '$text'.");
+      return \preg_replace('@<(\w+)\b.*?>.*?</\1>@si', '', $text);
     }
     
     return $text;
@@ -126,4 +127,71 @@ function is_absolute_path(
     }
 
     return false;
+}
+
+
+
+// Array //
+
+/**
+ * @param array<int|string,mixed> $needles
+ * @param array<int|string,mixed> $haystack
+ */
+function any_in_array(
+    array $needles, 
+    array $haystack
+): bool
+{
+    foreach ($needles as $needle) {
+        if (\in_array($needle, $haystack)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @param array<int|string,mixed> $needles
+ * @param array<int|string,mixed> $haystack
+ */
+function all_in_array(
+    array $needles, 
+    array $haystack
+): bool
+{
+    foreach ($needles as $needle) {
+        if (!\in_array($needle, $haystack)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+
+// File //
+
+/**
+ * @see https://www.php.net/manual/en/function.file-put-contents.php#123657
+ * 
+ * @param resource $context
+ */
+function file_force_put_contents(
+    string $filename,
+    mixed $data,
+    int $flags = 0,
+    $context = null
+): int|false
+{
+    $parts = \explode('/', $filename);
+    \array_pop($parts);
+    $dir = \implode('/', $parts);
+
+    if (!\is_dir($dir)) {
+        \mkdir($dir, 0777, true);
+    }
+
+    return \file_put_contents($filename, $data, $flags);
 }

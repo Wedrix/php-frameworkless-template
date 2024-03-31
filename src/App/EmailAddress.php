@@ -26,11 +26,11 @@ final class EmailAddress
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid EmailAddress! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid EmailAddress! The value cannot be empty.');
         }
 
         if (\filter_var($value, \FILTER_VALIDATE_EMAIL) === false) {
-            throw new \Exception('Invalid EmailAddress!');
+            throw new \InvalidDataException('Invalid EmailAddress!');
         }
 
         return new self(

@@ -26,7 +26,7 @@ final class ContextCookie
         $value = \trim($name);
 
         if (empty($value)) {
-            throw new \Exception('Invalid ContextCookie! The value cannot be empty.');
+            throw new \InvalidDataException('Invalid ContextCookie! The value cannot be empty.');
         }
 
         //TODO: Validate Value

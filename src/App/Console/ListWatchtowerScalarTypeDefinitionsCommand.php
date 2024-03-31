@@ -6,7 +6,6 @@ namespace App\Console;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -26,10 +25,6 @@ function ListWatchtowerScalarTypeDefinitionsCommand(): Command
             OutputInterface $output
         ): int
         {
-            if (!$output instanceof ConsoleOutputInterface) {
-                throw new \Exception('This command accepts only an instance of "ConsoleOutputInterface".');
-            }
-    
             if (\iterator_count(WatchtowerConsole()->scalarTypeDefinitions()) > 0) {
                 $styledOutput = new SymfonyStyle($input, $output);
         

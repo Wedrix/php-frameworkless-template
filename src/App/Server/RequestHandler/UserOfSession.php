@@ -8,11 +8,9 @@ function UserOfSession(
     Session $session
 ): User
 {
-    global $sessions_users;
+    \assert(thereIsAUserOfSession(session: $session), 'There is no user of the session.');
 
-    if (thereIsNoUserOfSession(session: $session)) {
-        throw new \Exception('There is no user of the session.');
-    }
+    global $sessions_users;
 
     return $sessions_users[$session];
 }
@@ -24,11 +22,9 @@ final class UserOfSession
         Session $session
     ): void
     {
-        global $sessions_users, $users_sessions;
+        \assert(thereIsNoUserOfSession(session: $session), 'There is a user of the session.');
 
-        if (thereIsAUserOfSession(session: $session)) {
-            throw new \Exception('There is a user of the session.');
-        }
+        global $sessions_users, $users_sessions;
 
         $sessions_users[$session] = $user;
 
@@ -40,11 +36,9 @@ final class UserOfSession
         Session $session
     ): void
     {
-        global $sessions_users, $users_sessions;
+        \assert(userIsOfSession(user: $user, session: $session), 'The user is not of the session.');
 
-        if (userIsNotOfSession(user: $user, session: $session)) {
-            throw new \Exception('The user is not of the session.');
-        }
+        global $sessions_users, $users_sessions;
         
         $user = $sessions_users[$session];
 

@@ -8,6 +8,7 @@ use App\CipherText;
 use Firebase\JWT\JWT;
 
 use function App\Config;
+use function App\Encrypter;
 
 interface Session
 {
@@ -62,18 +63,39 @@ function Session(
             $request = RequestOfUser($user);
 
             if (\is_null($this->refreshToken)) {
-                throw new \Exception('The Refresh Token is not set!');
+                throw new \ConstraintViolationException('The refresh token is unset!');
+            }
+    
+            if (
+                !(
+                    (RefreshToken::iss($this->refreshToken) === Config()->appDomain()) &&
+                    (RefreshToken::aud($this->refreshToken) === (requestOrigin($request) ?? '')) &&
+                    (\in_array(RefreshToken::aud($this->refreshToken), Config()->accessControlAllowedOrigins())) &&
+                    (RefreshToken::iat($this->refreshToken) <= $time->getTimestamp()) &&
+                    (RefreshToken::exp($this->refreshToken) === $time->setTimestamp(RefreshToken::iat($this->refreshToken) + (Config()->authRefreshTokenTTLInMinutes() * 60))->getTimestamp()) &&
+                    (RefreshToken::sub($this->refreshToken) === (string) $user->id()) &&
+                    (RefreshToken::role($this->refreshToken) === $user->role()) &&
+                    (RefreshToken::fingerprint($this->refreshToken) === \hash_hmac(
+                        algo: Config()->authFingerprintHashAlgorithm(),
+                        data: requestUserContext(request: $request) ?? '',
+                        key: \is_string($authorizationKey = Encrypter()->decrypt((string) AccountOfUser(user: $user)->authorizationKey())) 
+                                ? $authorizationKey 
+                                : ''
+                    ))
+                )
+            ) {
+                throw new \ConstraintViolationException('The refresh token is invalid!');
             }
         
             if (RefreshToken::exp($this->refreshToken) <= $time->getTimestamp()) {
-                throw new \Exception('The Refresh Token is expired!');
+                throw new \ConstraintViolationException('The refresh token has expired!');
             }
     
             $this->accessToken = AccessToken::{
                 JWT::encode(
                     payload: [
                         'iss' => Config()->appDomain(),
-                        'aud' => $requestOrigin = requestOrigin($request) ?? throw new \Exception('The origin is not set for the request.'),
+                        'aud' => $requestOrigin = requestOrigin($request) ?? '',
                         'iat' => $time->getTimestamp(),
                         'exp' => $time->modify('+'. Config()->authAccessTokenTTLInMinutes().' minutes')->getTimestamp(),
                         'sub' => (string) $user->id(),
@@ -95,7 +117,7 @@ function Session(
                         'iss' => Config()->appDomain(),
                         'aud' => $requestOrigin,
                         'iat' => $time->getTimestamp(),
-                        'exp' => $time->modify('+'.Config()->authRefreshTokenTTLInMinutes().' minutes')->getTimestamp(),
+                        'exp' => $time->modify('+'. Config()->authRefreshTokenTTLInMinutes().' minutes')->getTimestamp(),
                         'sub' => (string) $user->id(),
                         'role' => $user->role(),
                         'fingerprint' => \hash_hmac(

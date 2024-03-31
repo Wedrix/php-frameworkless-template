@@ -8,10 +8,7 @@ final class Hash
 {
     private function __construct(
         private readonly string $value
-    )
-    {
-        //TODO: Validate value
-    }
+    ){}
 
     public function __toString(): string
     {
@@ -26,8 +23,16 @@ final class Hash
         array $arguments
     ): self
     {
+        $value = \trim($name);
+
+        if (empty($value)) {
+            throw new \InvalidDataException('Invalid Hash! The value cannot be empty.');
+        }
+
+        //TODO: Validate value
+
         return new self(
-            value: $name
+            value: $value
         );
     }
 
