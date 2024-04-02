@@ -36,16 +36,7 @@ namespace
                 // Require Autoloader
                 require \dirname(__DIR__).'/vendor/autoload.php';
 
-                // Uninstall dev dependencies and optimize autoloader for non-dev environments
-                if (Config()->appEnvironment() !== 'development') {
-                    \system('composer install --no-dev --optimize-autoloader');
-
-                    require \dirname(__DIR__).'/vendor/autoload.php';
-                }
-        
-                // Configure PHP
-                \ini_set('zend.assertions', (Config()->appEnvironment() !== 'development') ? 0 : 1);
-
+                // Configure Error Reporting
                 \error_reporting(\E_ALL);
 
                 \set_error_handler(
@@ -57,6 +48,16 @@ namespace
                         return false;
                     }
                 );
+
+                // Uninstall dev dependencies and optimize autoloader for non-dev environments
+                if (Config()->appEnvironment() !== 'development') {
+                    \system('composer install --no-dev --optimize-autoloader');
+
+                    require \dirname(__DIR__).'/vendor/autoload.php';
+                }
+        
+                // Configure PHP
+                \ini_set('zend.assertions', (Config()->appEnvironment() !== 'development') ? 0 : 1);
 
                 // Generate Doctrine Proxies for non-dev environments
                 if (Config()->appEnvironment() !== 'development') {
